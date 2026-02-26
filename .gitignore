@@ -1,0 +1,55 @@
+# ===== General Build Artifacts =====
+*.d
+*.obj
+*.o
+*.slo
+*.lo
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# ===== Allow prebuilt third-party binaries =====
+!external/libs/**/*.dll
+!external/libs/**/*.lib
+!external/libs/**/*.a
+!external/libs
+!external/**
+
+# ===== Libraries =====
+*.so
+*.dylib
+*.dll
+*.lib
+*.a
+*.lai
+*.la
+
+# ===== Submodules and External Dependencies =====
+# Keep everything inside external/ (like glfw, fmod headers, etc.)
+
+# ===== Executables =====
+*.exe
+*.out
+*.app
+
+# ===== Visual Studio / Windows build artifacts =====
+*.exp
+*.pdb
+*.ilk
+
+# ===== Logs / temporary =====
+*.log
+*.tmp
+*.cache
+*.bak
+
+# ===== Engine Build Outputs =====
+core.dll
+game.dll
+application.exe
+
+Exis/game
+
+# ===== Claude =====
+CLAUDE.md
