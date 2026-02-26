@@ -105,7 +105,7 @@ Font generateTextureFont(const char* filePath, int characterSize){ //Watch the f
             xOffset // Store the xOffset for UV calculations
         };
         font.characters[c] = character;
-        xOffset += face->glyph->bitmap.width;
+        xOffset += face->glyph->bitmap.width + 1; //To gap the texture
     }
 
     FT_Done_Face(face);
