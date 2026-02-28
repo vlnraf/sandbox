@@ -17,10 +17,20 @@
 
 #include "core.hpp"
 
+
+struct UiState;
+
 struct GameState{
     Arena* arena;
     OrtographicCamera mainCamera;
     bool restart;
+
+    float radius;
+    int iterations;
+    Texture whiteTexture;
+    Font f;
+    UiState* uiState;
+    Texture texture;
 
     bool pause = false;
 };

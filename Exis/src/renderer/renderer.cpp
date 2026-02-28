@@ -300,7 +300,7 @@ void initRenderer(Arena* arena, const uint32_t width, const uint32_t height){
     renderer->activeShader = NULL;
 
     // Screen-space camera for UI: pixel-perfect (0,0) to (width, height)
-    renderer->screenCamera = createCamera(0.0f, (float)renderer->width, 0.0f, (float)renderer->height);
+    renderer->screenCamera = createCamera(0.0f, (float)width, 0.0f, (float)height);
 
     useShader(&renderer->shader);
     int samplers[MAX_TEXTURES_BIND];
@@ -702,7 +702,7 @@ void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const glm::vec
 }
 
 //World text rendering (to be refactored)
-void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, glm::vec4 color){
+void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, glm::vec4 color, float layer){
     if(renderer->quadVertexCount >= MAX_VERTICES){
         renderFlush();
         renderStartBatch();
@@ -733,12 +733,11 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
 
     for(int i = 0; text[i] != '\0'; i++){
         float xpos = pos.x + font->characters[(unsigned char) text[i]].Bearing.x * scale;
-        float ypos = pos.y + (font->characters[(unsigned char) text[i]].Bearing.y - font->characters[(unsigned char) text[i]].Size.y) * scale;
+        float ypos = pos.y - (font->characters[(unsigned char) text[i]].Bearing.y - font->characters[(unsigned char) text[i]].Size.y) * scale;
         if(text[i] == '\n'){
             //NOTE: can be a problem for 3d text and 2d text??
             int padding = 10 * scale;
-            pos.y -= (font->characters[(unsigned char) text[i]].Size.y * scale);
-            pos.y -= padding;
+            pos.y -= font->characters[(unsigned char) text[i]].Size.y * scale + padding;
             pos.x = initPosx;
             continue;
         }
@@ -755,14 +754,15 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
         glm::vec4 uv = calculateSpriteUV(texture, charRect);
         // update VBO for each character
         size_t vertSize = 6;
-        glm::vec4 vertexPosition[] = { 
-            {xpos,     ypos + h, pos.z, 1.0f},//, uv.y, uv.z},//0.0f, 0.0f ,
-            {xpos,     ypos,     pos.z, 1.0f},//  uv.y, uv.x},//0.0f, 1.0f ,
-            {xpos + w, ypos,     pos.z, 1.0f},//  uv.w, uv.x},//1.0f, 1.0f ,
-
-            {xpos,     ypos + h, pos.z, 1.0f},//, uv.y, uv.z}, //0.0f, 0.0f ,
-            {xpos + w, ypos,     pos.z, 1.0f},//  uv.w, uv.x}, //1.0f, 1.0f ,
-            {xpos + w, ypos + h, pos.z, 1.0f}};//, uv.w, uv.z}};//1.0f, 0.0f };
+        // bottom-left origin: ypos is bottom, ypos+h is top
+        glm::vec4 vertexPosition[] = {
+            {xpos,     ypos + h, layer, 1.0f},
+            {xpos,     ypos,     layer, 1.0f},
+            {xpos + w, ypos,     layer, 1.0f},
+            {xpos,     ypos + h, layer, 1.0f},
+            {xpos + w, ypos,     layer, 1.0f},
+            {xpos + w, ypos + h, layer, 1.0f},
+        };
 
         glm::vec2 textureCoords[] = {
             {uv.y, uv.z},
@@ -835,8 +835,8 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
     }
 }
 
-void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, glm::vec4 color){
-    renderDrawText3D(font, text, {pos, 0.0f}, scale, color);
+void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, glm::vec4 color, float layer){
+    renderDrawText3D(font, text, {pos, 0.0f}, scale, color, layer);
 }
 
 // Simple variant: draw whole texture with color tint

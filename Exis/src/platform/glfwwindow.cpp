@@ -4,6 +4,10 @@
 #include "../core/window.hpp"
 #include "../core/tracelog.hpp"
 
+void charCallback(GLFWwindow* window, unsigned int codepoint) {
+    LOGINFO("Character %c", codepoint);
+}
+
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height){
     //ApplicationState* app = (ApplicationState*)glfwGetWindowUserPointer(window);
     //if(!app) return;
@@ -11,12 +15,13 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height){
     // Update renderer resolution and recreate screen camera
     // Viewport is automatically managed by the render flow (beginTextureMode/endTextureMode)
     setRenderResolution(width, height);
+    setViewport(0, 0, width, height);
 
     // Update game camera to maintain aspect ratio
-    OrtographicCamera* gameCamera = getActiveCamera();
-    if(gameCamera){
-        updateCameraAspectRatio(gameCamera, (float)width, (float)height);
-    }
+    //OrtographicCamera* gameCamera = getActiveCamera();
+    //if(gameCamera){
+    //    updateCameraAspectRatio(gameCamera, (float)width, (float)height);
+    //}
 
     Window* windowData = (Window*)glfwGetWindowUserPointer(window);
     glfwSetWindowSize((GLFWwindow*)windowData->handle, width, height);
@@ -154,6 +159,7 @@ void windowSetCallbacks(Window* window){
     GLFWwindow* w = (GLFWwindow*) window->handle;
     glfwSetFramebufferSizeCallback(w, frameBufferSizeCallback);
     glfwSetKeyCallback(w, keyCallback);
+    glfwSetCharCallback(w, charCallback);
     glfwSetMouseButtonCallback(w, mouseCallback);
     glfwSetCursorPosCallback(w, cursorPositionCallback);
     glfwSetJoystickCallback(joystickCallback);
