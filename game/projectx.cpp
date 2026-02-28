@@ -62,6 +62,8 @@ struct Context{
     float padding;
     float spacing;
     float border;
+    glm::vec2 ctxPrevPos;
+    glm::vec2 ctxPrevY;
     bool sameLine;
 };
 
@@ -120,6 +122,18 @@ bool aabb(glm::vec2 mousePos, glm::vec2 widgetPos, glm::vec2 widgetSize){
             mousePos.y >= widgetPos.y && mousePos.y <= widgetPos.y + widgetSize.y);
 }
 
+void sameLine(){
+    Context* c = &state->c[state->ctxCount-1];
+    //c->sameLine = true;
+    glm::vec2 temp;
+    temp = c->ctxPos;
+    c->ctxPos.x = c->ctxPrevPos.x;
+    c->ctxPrevPos.x = temp.x;
+    temp = c->ctxPos;
+    c->ctxPos.y = c->ctxPrevY.y;
+    c->ctxPrevY.y = temp.y;
+}
+
 void setStyle(UiState* ctx, const UiStyle* style){
     state->style = *style;
 }
@@ -140,13 +154,29 @@ void setStyle(UiState* ctx, const UiStyle* style){
 //    releaseTempArena(tmp);
 //}
 
-void advanceContext(Context* c, glm::vec2 pos ,glm::vec2 size){
-    c->ctxPos.x += pos.x;
-    c->ctxPos.y -= pos.y;
-    c->ctxSize.y += size.y;
-    c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
-    c->ctxSize.x = glm::max(c->ctxSize.x, size.x);
-    c->ctxSize.y = glm::max(c->ctxSize.y, size.y);
+void advanceContext(Context* c, glm::vec2 size){
+    //vertical layout
+    if(!c->sameLine){
+        c->ctxPos.y -= size.y;
+        c->ctxSize.y += size.y;
+        c->ctxSize.x = glm::max(c->ctxSize.x, size.x );
+        c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
+        c->ctxSize.y = glm::max(c->ctxSize.y, size.y);
+        c->ctxPrevPos.x = c->ctxPos.x + size.x;
+        c->ctxPrevY.y = c->ctxPos.y + size.y;
+        c->ctxPos.x = c->pos.x;
+    }else{
+        c->ctxPos.x += size.x;
+        //c->ctxSize.x = glm::max(c->ctxSize.x, c->ctxPos.x + size.x - c->pos.x );
+        c->ctxSize.x = glm::max(c->ctxSize.x, c->ctxPos.x - c->pos.x);
+        c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
+        c->ctxSize.y = glm::max(c->ctxSize.y, size.y);
+        c->sameLine = false;
+        glm::vec2 temp;
+        temp = c->ctxPos;
+        c->ctxPos = c->ctxPrevPos;
+        c->ctxPrevPos = temp;
+    }
 }
 
 bool button(String8 label){
@@ -163,11 +193,16 @@ bool button(String8 label){
     glm::vec2 size = {tWidth, tHeight};
 
     glm::vec4 color = state->style.bg;
+    //Todo brach when adding horizontal layout
+    glm::vec2 pos;
+    if(!c->sameLine){
+        pos = {c->ctxPos.x , c->ctxPos.y - size.y };
+        //pos = c->ctxPos;
+    }else{
+        pos = {c->ctxPos.x , c->ctxPos.y };
+    }
 
-    advanceContext(c, {0, size.y + c->spacing}, {size.x,size.y + c->spacing});
-
-    LOGINFO("%u", state->active);
-    if(aabb(state->mousePos, c->ctxPos, size)){
+    if(aabb(state->mousePos, pos, size)){
         color = state->style.hot;
         state->hover = id;
     }
@@ -183,26 +218,23 @@ bool button(String8 label){
             state->active = id;
         }
     }
-
     UiRenderCommand command = {};
     command.type    = UI_RECTANGLE;
-    command.pos     = c->ctxPos;
+    command.pos     = pos;
     command.size    = size;
     command.color   = color;
     state->renderCommands.items[state->renderCommands.lenght++] = command;
     command.type    = UI_TEXT;
     command.label   = label;
     command.scale   = 1.0f;
-    command.pos     = c->ctxPos;
+    command.pos     = pos;
     command.size    = {0,0};
     command.color   = state->style.text;
     state->renderCommands.items[state->renderCommands.lenght++] = command;
 
-    advanceContext(c, {0, c->spacing}, {0, c->spacing});
-
-    //renderDrawFilledRect(c->ctxPos, size, 0, color, UI_LAYER + state->ctxCount);
-    //renderDrawText2D(&state->f, label.str, c->ctxPos, 1, state->style.text, UI_LAYER + state->ctxCount);
-
+    //advance only on y direction
+    //branch it when adding horizontal layout
+    advanceContext(c, {size.x , size.y });
     return result;
 }
 
@@ -377,36 +409,21 @@ void beginPanel(String8 title, glm::vec2 pos, glm::vec2 size){
     Context c;
     c.label = title;
     c.pos = {pos.x, getScreenSize().y - pos.y};
-    //c.pos = {pos.x, pos.y};
     c.size = size;
-    c.size = {0,0};
-    c.padding = 5;
-    c.spacing = 5;
+    c.size = {0,0}; //assign a default size???
+    c.padding = 5;  //should be elsewhere??
+    c.spacing = 5;  //should be elsewhere??
     c.ctxPos = c.pos;
+    c.ctxPrevPos = c.ctxPos;
     c.ctxSize = {0,0};
     float textHeight = calculateTextHeight(&state->f, title.str, 1);
     float textWidth = calculateTextWidth(&state->f, title.str, 1);
-    //c.ctxSize = {textWidth, textHeight};
-    c.barSize = {textWidth + c.spacing, textHeight + c.spacing};
+    c.barSize = {textWidth, textHeight};
     c.barPos = {c.pos.x, c.pos.y - c.barSize.y};
-    //c.ctxPos.y -= textHeight;
-    advanceContext(&c, {c.spacing,c.barSize.y}, {c.barSize.x, c.barSize.y});
-    //c.barColor = {0.0f, 0.0f, 1.0f, 1.0f};
-    //renderDrawFilledRect(c.pos, size, 0, color);
-    //advanceContext(&c, {c.spacing, -size.y + c.barSize.y + c.spacing + textHeight});
-    //advanceContext(&c, {c.spacing, 0}, {c.spacing, 0});
-
-
+    c.sameLine = false;
     state->renderCommands.lenght++;
     c.panelIdx = state->renderCommands.lenght-1;
-    //advanceContext(&c, {0, c.barSize.y + c.spacing}, {c.barSize.x, c.barSize.y});
-    ////Content
-    //renderDrawFilledRect({c.pos.x , c.ctxPos.y}, c.ctxSize, 0, color, UI_LAYER + state->ctxCount);
-    ////TitleBar
-    //renderDrawFilledRect(c.barPos, c.barSize, 0, barColor, UI_LAYER + state->ctxCount);
-    //renderDrawText2D(&state->f, title.str, c.barPos, 1, state->style.text, UI_LAYER + state->ctxCount);
-
-
+    advanceContext(&c, {c.barSize.x, c.barSize.y});
     state->c[state->ctxCount++] = c;
 }
 
@@ -494,7 +511,15 @@ void drawHud(GameState* gs, Arena* a){
                 endPanel();
             }
             button(String8Lit("O"));
-            button(String8Lit("O"));
+            sameLine();
+            button(String8Lit("OP"));
+            sameLine();
+            button(String8Lit("OPS"));
+            sameLine();
+            button(String8Lit("OPSS"));
+            sameLine();
+            button(String8Lit("OPSSS"));
+            button(String8Lit("OPSSSS"));
         endPanel();
         //beginPanel(String8Lit("Test2"), {10,10}, {200,200}, CTX_HORIZONTAL_ALIGNMENT);
         //    button(String8Lit("OPS5"));
@@ -521,7 +546,6 @@ void drawHud(GameState* gs, Arena* a){
         UiRenderCommand* command = &state->renderCommands.items[i];
         switch(command->type){
             case UI_RECTANGLE:{
-                LOGINFO("%f,%f,%f,%f", command->color.r, command->color.g, command->color.b, command->color.a);
                 renderDrawFilledRect(command->pos, command->size, 0, command->color);
                 break;
             }
