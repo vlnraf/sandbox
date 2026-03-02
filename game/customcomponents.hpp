@@ -14,5 +14,10 @@ struct AccelerationComponent{
     glm::vec2 a;
 };
 
+extern ECS_DECLARE_COMPONENT(MassComponent)
+struct MassComponent{
+    float v;
+};
+
 void importCustomComponentModule();
 #endif

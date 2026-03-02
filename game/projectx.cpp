@@ -569,22 +569,26 @@ void systemRenderEcs(){
 void systemGravity(GameState* gs, float dt){
     static float radius = 50;
     static float gravity = 9.80f;
-    EntityArray entities = view(ECS_TYPE(TransformComponent), ECS_TYPE(VelocityComponent), ECS_TYPE(AccelerationComponent), ECS_TYPE(AsteroidTag));
+    EntityArray entities = view(ECS_TYPE(TransformComponent),    ECS_TYPE(VelocityComponent),
+                                ECS_TYPE(AccelerationComponent), ECS_TYPE(AsteroidTag),
+                                ECS_TYPE(MassComponent));
     for(size_t i = 0; i < entities.count; i++){
         Entity e = entities.entities[i];
         TransformComponent* transform = getComponent(e, TransformComponent);
         VelocityComponent* velocity = getComponent(e, VelocityComponent);
         AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
+        MassComponent* mass = getComponent(e, MassComponent);
         for(size_t j = i+1; j < entities.count; j++){
             Entity e2 = entities.entities[j];
             TransformComponent* transform2 = getComponent(e2, TransformComponent);
             AccelerationComponent* acceleration2 = getComponent(e2, AccelerationComponent);
-            ASSERT((transform && velocity && transform2), "Ecs gravity failed, null component");
+            MassComponent* mass2 = getComponent(e2, MassComponent);
+            ASSERT((transform2 && transform2 && mass2), "Ecs gravity failed, null component");
             if(glm::distance(transform->position, transform2->position) <= radius){
                 glm::vec2 diff = glm::vec2(transform2->position) - glm::vec2(transform->position);
                 //glm::vec2 force = glm::normalize(diff);
-                acceleration2->a -= glm::normalize(diff) * gravity;
-                acceleration->a  += glm::normalize(diff) * gravity;
+                acceleration2->a -= glm::normalize(diff) * gravity * mass->v;
+                acceleration->a  += glm::normalize(diff) * gravity * mass2->v;
                 //direction2->dir = glm::normalize(direction2->dir - force);
                 //direction->dir = glm::normalize(direction->dir + force);
 
@@ -672,6 +676,10 @@ void systemSpawnAsteroids(GameState* gs, float dt){
         AccelerationComponent acceleration = {};
         acceleration.a = glm::normalize(dir) * baseSpeed;
         pushComponent(e, AccelerationComponent, &acceleration);
+        MassComponent mass = {};
+        mass.v = size;
+        //mass.v = 1;
+        pushComponent(e, MassComponent, &mass);
         AsteroidTag asteroidTag = {};
         pushComponent(e, AsteroidTag, &asteroidTag);
         rate = 0;
