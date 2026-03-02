@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include "core/ecs.hpp"
 
 extern ECS_DECLARE_COMPONENT(WallTag);
@@ -52,3 +53,4 @@ extern ECS_DECLARE_COMPONENT(DamageComponent);
 struct DamageComponent{
     float dmg;
 };
+#endif

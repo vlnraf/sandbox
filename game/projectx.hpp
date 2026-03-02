@@ -18,7 +18,12 @@
 #include "core.hpp"
 
 
+#define MAX_GAME_TEXTURES 10
 struct UiState;
+
+enum GameTextures{
+    PLAYER_TEXTURE = 0,
+};
 
 struct GameState{
     Arena* arena;
@@ -27,18 +32,23 @@ struct GameState{
 
     float radius;
     int iterations;
-    Texture whiteTexture;
     Font f;
     UiState* uiState;
     Texture texture;
+    Texture whiteTexture;
+    RenderTexture finalTexture;
+    Texture gameTextures[MAX_GAME_TEXTURES];
+    glm::vec2 gameSize;
+    Entity player;
+
 
     bool pause = false;
 };
 
 extern "C" {
-    GAME_API void gameStart(Arena* gameArena, EngineState* engine);
-    GAME_API void gameRender(Arena* gameArena, EngineState* engine, float dt);
-    GAME_API void gameUpdate(Arena* gameArena, EngineState* engine, float dt);
+    GAME_API void gameStart(Arena* gameArena);
+    GAME_API void gameRender(Arena* gameArena, float dt);
+    GAME_API void gameUpdate(Arena* gameArena, float dt);
     //GAME_API GameState* gameReload(GameState* gameState, Renderer* renderer, const char* filePath);
-    GAME_API void gameStop(Arena* gameArena, EngineState* engine);
+    GAME_API void gameStop(Arena* gameArena);
 }

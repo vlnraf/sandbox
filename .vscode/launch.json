@@ -12,16 +12,6 @@
             "environment": [],
             "console": "newExternalWindow",
             "preLaunchTask": "Make Project"
-        },
-        {
-            "name": "game",
-            "request": "launch",
-            "program": "${workspaceRoot}/game.dll",
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "newExternalWindow",
-            "preLaunchTask": "gameDLL"
         }
     ]
 }

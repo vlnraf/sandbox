@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(make game)",
+      "Bash(make game.dll)",
+      "Bash(clang++ -std=c++14 --target=x86_64-pc-windows-msvc -m64 -W -Wall -Wno-missing-field-initializers -g -O0 -D_CRT_SECURE_NO_WARNINGS -DPLATFORM_WINDOWS -I game -I Exis/src -I Exis/external/ -L Exis/external/libs/glfw -L Exis/external/libs/fmod -L Exis/external/libs/freetype -lfreetype -DGAME_EXPORT -o game.dll -lcore game/*.cpp -shared)"
     ]
   }
 }

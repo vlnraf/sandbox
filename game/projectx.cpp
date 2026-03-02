@@ -1,4 +1,5 @@
 #include "projectx.hpp"
+#include "customcomponents.hpp"
 
 #define ASSERT(condition, msg) \
     do { \
@@ -9,6 +10,8 @@
     } while(0)
 
 
+
+// UI CODE --------------------------------------------
 #define UI_LAYER 30
 #define MAX_RENDER_COMMANDS 1000
 
@@ -52,19 +55,19 @@ struct UiStyle{
 
 struct Context{
     String8 label;
-    uint32_t panelIdx;
-    glm::vec2 pos;
-    glm::vec2 size;
-    glm::vec2 barPos;
-    glm::vec2 barSize;
-    glm::vec2 ctxPos;
-    glm::vec2 ctxSize;
+    uint32_t panelIdx;   // index into renderCommands where the panel background is reserved
+    glm::vec2 pos;       // anchor point of the panel (screen space, y-up from bottom-left)
+    glm::vec2 size;      // final computed size, filled in by endPanel
+    glm::vec2 barPos;    // position of the title bar
+    glm::vec2 barSize;   // size of the title bar
+    glm::vec2 ctxPos;    // cursor: where the next widget will be placed (moves down each widget)
+    glm::vec2 ctxSize;   // accumulated content area size (grows as widgets are added)
     float padding;
-    float spacing;
+    float spacing;       // gap between widgets
     float border;
-    glm::vec2 ctxPrevPos;
-    glm::vec2 ctxPrevY;
-    bool sameLine;
+    // lineEnd holds the right/top edge of the last placed widget.
+    // sameLine swaps ctxPos <-> lineEnd to continue on the same line instead of going down.
+    glm::vec2 lineEnd;
 };
 
 struct UiState{
@@ -84,7 +87,7 @@ struct UiState{
 uint32_t hashId(String8 label){
     int c;
     uint32_t result = 5381; //seed
-    for(int i = 0; i < label.size; i++){
+    for(uint64_t i = 0; i < label.size; i++){
         //char* c = label.str[i];
         c = label.str[i];
         result = ((result << 5) + result) + c;
@@ -122,16 +125,19 @@ bool aabb(glm::vec2 mousePos, glm::vec2 widgetPos, glm::vec2 widgetSize){
             mousePos.y >= widgetPos.y && mousePos.y <= widgetPos.y + widgetSize.y);
 }
 
+// Swap ctxPos and lineEnd so the next widget is placed to the right of the previous one
+// instead of below it. advanceContext always writes the "next line" position into lineEnd,
+// so swapping restores the horizontal continuation point.
 void sameLine(){
     Context* c = &state->c[state->ctxCount-1];
-    //c->sameLine = true;
+
     glm::vec2 temp;
     temp = c->ctxPos;
-    c->ctxPos.x = c->ctxPrevPos.x;
-    c->ctxPrevPos.x = temp.x;
+    c->ctxPos.x = c->lineEnd.x;
+    c->lineEnd.x = temp.x;
     temp = c->ctxPos;
-    c->ctxPos.y = c->ctxPrevY.y;
-    c->ctxPrevY.y = temp.y;
+    c->ctxPos.y = c->lineEnd.y;
+    c->lineEnd.y = temp.y;
 }
 
 void setStyle(UiState* ctx, const UiStyle* style){
@@ -154,29 +160,20 @@ void setStyle(UiState* ctx, const UiStyle* style){
 //    releaseTempArena(tmp);
 //}
 
+// Move the cursor down by the widget height and update the accumulated content size.
+// Also records lineEnd = right/top edge of this widget, which sameLine uses to
+// continue horizontally. ctxPos.x is reset to the panel left edge after each widget.
+// NOTE: always advances Y regardless of sameLine — mixed-height same-line rows will drift.
 void advanceContext(Context* c, glm::vec2 size){
-    //vertical layout
-    if(!c->sameLine){
-        c->ctxPos.y -= size.y;
-        c->ctxSize.y += size.y;
-        c->ctxSize.x = glm::max(c->ctxSize.x, size.x );
-        c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
-        c->ctxSize.y = glm::max(c->ctxSize.y, size.y);
-        c->ctxPrevPos.x = c->ctxPos.x + size.x;
-        c->ctxPrevY.y = c->ctxPos.y + size.y;
-        c->ctxPos.x = c->pos.x;
-    }else{
-        c->ctxPos.x += size.x;
-        //c->ctxSize.x = glm::max(c->ctxSize.x, c->ctxPos.x + size.x - c->pos.x );
-        c->ctxSize.x = glm::max(c->ctxSize.x, c->ctxPos.x - c->pos.x);
-        c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
-        c->ctxSize.y = glm::max(c->ctxSize.y, size.y);
-        c->sameLine = false;
-        glm::vec2 temp;
-        temp = c->ctxPos;
-        c->ctxPos = c->ctxPrevPos;
-        c->ctxPrevPos = temp;
-    }
+    c->ctxPos.y -= size.y;
+    c->ctxSize.y = c->pos.y - c->ctxPos.y;
+    // width is the max right edge seen so far (lineEnd.x tracks the widest row)
+    c->ctxSize.x = c->lineEnd.x - c->pos.x;
+    c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
+
+    c->lineEnd.x = c->ctxPos.x + size.x; // right edge of this widget
+    c->lineEnd.y = c->ctxPos.y + size.y; // top edge of this widget (for sameLine Y restore)
+    c->ctxPos.x = c->pos.x;              // reset X to panel left
 }
 
 bool button(String8 label){
@@ -193,14 +190,9 @@ bool button(String8 label){
     glm::vec2 size = {tWidth, tHeight};
 
     glm::vec4 color = state->style.bg;
-    //Todo brach when adding horizontal layout
+    // ctxPos is the cursor top edge; widget renders from (ctxPos.y - size.y) upward (y-up coords)
     glm::vec2 pos;
-    if(!c->sameLine){
-        pos = {c->ctxPos.x , c->ctxPos.y - size.y };
-        //pos = c->ctxPos;
-    }else{
-        pos = {c->ctxPos.x , c->ctxPos.y };
-    }
+    pos = {c->ctxPos.x , c->ctxPos.y - size.y };
 
     if(aabb(state->mousePos, pos, size)){
         color = state->style.hot;
@@ -243,7 +235,6 @@ bool buttonEx(String8 label, glm::vec2 pos, glm::vec2 size){
         LOGERROR("No context");
         return false;
     }
-    Context* c = &state->c[state->ctxCount - 1];
     uint32_t id = hashId(label);
 
     glm::vec4 color = state->style.bg;
@@ -414,13 +405,12 @@ void beginPanel(String8 title, glm::vec2 pos, glm::vec2 size){
     c.padding = 5;  //should be elsewhere??
     c.spacing = 5;  //should be elsewhere??
     c.ctxPos = c.pos;
-    c.ctxPrevPos = c.ctxPos;
+    c.lineEnd = c.ctxPos;
     c.ctxSize = {0,0};
     float textHeight = calculateTextHeight(&state->f, title.str, 1);
     float textWidth = calculateTextWidth(&state->f, title.str, 1);
     c.barSize = {textWidth, textHeight};
     c.barPos = {c.pos.x, c.pos.y - c.barSize.y};
-    c.sameLine = false;
     state->renderCommands.lenght++;
     c.panelIdx = state->renderCommands.lenght-1;
     advanceContext(&c, {c.barSize.x, c.barSize.y});
@@ -476,9 +466,7 @@ void drawHud(GameState* gs, Arena* a){
     glm::vec2 screenSize = getScreenSize();
 
     glm::vec2 panelSize = {250,250};
-    //glm::vec2 panelPos = {screenSize.x - 300, screenSize.y * 0.5f - panelSize.y * 0.5f};
     glm::vec2 panelPos = {10,10};
-    //LOGINFO("%f, %f | %f, %f | %f, %f", mousePos.x, mousePos.y, panelPos.x, panelPos.y, screenSize.x, screenSize.y);
     float padding = 10;
     int columns = 5;
             static bool t = false;
@@ -541,7 +529,7 @@ void drawHud(GameState* gs, Arena* a){
         //endPanel();
 
         //drawTextBox(a, {500, 100}, {100,50});
-    //for(int i = state.renderCommands.lenght-1; i >= 0; i--){
+    //for(int i = state->renderCommands.lenght-1; i >= 0; i--){
     for(uint32_t i = 0; i < state->renderCommands.lenght; i++){
         UiRenderCommand* command = &state->renderCommands.items[i];
         switch(command->type){
@@ -558,26 +546,168 @@ void drawHud(GameState* gs, Arena* a){
     endScene();
     end();
 
-    //horizontal layout
-    //panelPos = {screenSize.x - 300, 50};
-    //panelSize = {250,900};
-
     releaseTempArena(tmp);
 }
 
-GAME_API void gameStart(Arena* gameArena, EngineState* engineState){
+// --------------------------------------------
+
+
+void systemRenderEcs(){
+    EntityArray entities = view(ECS_TYPE(SpriteComponent), ECS_TYPE(TransformComponent));
+    for(size_t i = 0; i < entities.count; i++){
+        Entity e = entities.entities[i];
+        SpriteComponent* sprite = getComponent(e, SpriteComponent);
+        TransformComponent* transform = getComponent(e, TransformComponent);
+        ASSERT((sprite && transform), "Ecs renderer failed, null component");
+        Rect rect = {{transform->position.x, transform->position.y}, sprite->size};
+        renderDrawQuadPro(transform->position, sprite->size, transform->rotation,
+                            rect, {0.5f, 0.5f}, sprite->texture, sprite->color,
+                            sprite->ySort, sprite->ySortOffset);
+    }
+}
+
+void systemGravity(GameState* gs, float dt){
+    static float radius = 50;
+    static float gravity = 9.80f;
+    EntityArray entities = view(ECS_TYPE(TransformComponent), ECS_TYPE(VelocityComponent), ECS_TYPE(AccelerationComponent), ECS_TYPE(AsteroidTag));
+    for(size_t i = 0; i < entities.count; i++){
+        Entity e = entities.entities[i];
+        TransformComponent* transform = getComponent(e, TransformComponent);
+        VelocityComponent* velocity = getComponent(e, VelocityComponent);
+        AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
+        for(size_t j = i+1; j < entities.count; j++){
+            Entity e2 = entities.entities[j];
+            TransformComponent* transform2 = getComponent(e2, TransformComponent);
+            AccelerationComponent* acceleration2 = getComponent(e2, AccelerationComponent);
+            ASSERT((transform && velocity && transform2), "Ecs gravity failed, null component");
+            if(glm::distance(transform->position, transform2->position) <= radius){
+                glm::vec2 diff = glm::vec2(transform2->position) - glm::vec2(transform->position);
+                //glm::vec2 force = glm::normalize(diff);
+                acceleration2->a -= glm::normalize(diff) * gravity;
+                acceleration->a  += glm::normalize(diff) * gravity;
+                //direction2->dir = glm::normalize(direction2->dir - force);
+                //direction->dir = glm::normalize(direction->dir + force);
+
+                //direction->dir.x = ;
+                //if(transform->position.y > transform2->position.y){
+                //    direction->dir.y -=  gravity * dt;
+                //}else if(transform->position.y < transform2->position.y){
+                //    direction->dir.y +=  gravity * dt;
+                //}
+                //if(transform->position.x > transform2->position.x){
+                //    direction->dir.x -=  gravity * dt;
+                //}else if(transform->position.x < transform2->position.x){
+                //    direction->dir.x +=  gravity * dt;
+                //}
+                //velocity->vel    = ;
+            }
+        }
+    }
+
+}
+
+void systemMovement(float dt){
+    EntityArray entities = view(ECS_TYPE(TransformComponent), ECS_TYPE(VelocityComponent), ECS_TYPE(AccelerationComponent));
+    for(size_t i = 0; i < entities.count; i++){
+        Entity e = entities.entities[i];
+        TransformComponent* transform = getComponent(e, TransformComponent);
+        VelocityComponent* velocity = getComponent(e, VelocityComponent);
+        AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
+        ASSERT((transform && velocity && acceleration), "Ecs movement failed, null component");
+        velocity->vel += acceleration->a * dt;
+        acceleration->a = {0, 0};
+        transform->position.x += velocity->vel.x * dt;
+        transform->position.y += velocity->vel.y * dt; 
+        //LOGINFO("%f, %f", velocity->vel.x, velocity->vel.y);
+        //velocity->vel = {0, 0};// remove the reset to have a character which doesn't have breaks
+    }
+}
+
+void systemGameInput(){
+    EntityArray entities = view(ECS_TYPE(PlayerTag));
+    for(size_t i = 0; i < entities.count; i++){
+        Entity e = entities.entities[i];
+        VelocityComponent* velocity = getComponent(e, VelocityComponent);
+        AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
+        ASSERT((velocity), "Ecs movement failed, null component");
+        //velocity->vel = {0,0};
+        acceleration->a = {0,0};
+        if(isPressed(KEYS::D)) acceleration->a.x = +1.0f;
+        if(isPressed(KEYS::A)) acceleration->a.x = -1.0f;
+        if(isPressed(KEYS::W)) acceleration->a.y = +1.0f;
+        if(isPressed(KEYS::S)) acceleration->a.y = -1.0f;
+        //LOGINFO("%f, %f", acceleration->a.x, acceleration->a.y);
+    }
+}
+
+void systemSpawnAsteroids(GameState* gs, float dt){
+    //TODO: change rand with a better random function
+    static float rate;
+    float rateSpawn = 1.0f;
+    if(rate >= rateSpawn){
+        glm::vec2 spawnRange = gs->gameSize;
+        int baseSize = 10;
+        int maxSize = 20;
+        float baseSpeed = 5000.0f;
+        float size = (rand() % maxSize) + baseSize;
+        Entity e = createEntity();
+        TransformComponent transform = {};
+        glm::vec3 spawnPos = {((((float)rand() / RAND_MAX) - 0.5f) * spawnRange.x), ((((float)rand() / RAND_MAX) - 0.5f) * spawnRange.y), 0.0f};
+        glm::vec3 playerPos = getComponent(gs->player, TransformComponent)->position;
+        glm::vec2 dir = playerPos - spawnPos;
+        transform.position = spawnPos;
+        pushComponent(e, TransformComponent, &transform);
+        SpriteComponent sprite = {};
+        sprite.color = {1.0f,1.0f,1.0f,1};
+        sprite.layer = 1;
+        sprite.size = {size, size};
+        sprite.texture = &gs->gameTextures[PLAYER_TEXTURE];
+        sprite.visible = true;
+        sprite.ySort = true;
+        sprite.ySortOffset = 0;
+        pushComponent(e, SpriteComponent, &sprite);
+        VelocityComponent velocity = {};
+        velocity.vel = {0, 0};
+        pushComponent(e, VelocityComponent, &velocity);
+        AccelerationComponent acceleration = {};
+        acceleration.a = glm::normalize(dir) * baseSpeed;
+        pushComponent(e, AccelerationComponent, &acceleration);
+        AsteroidTag asteroidTag = {};
+        pushComponent(e, AsteroidTag, &asteroidTag);
+        rate = 0;
+    }
+    rate += dt;
+}
+
+void systemDestroyAsteroids(GameState* gs){
+    EntityArray entities = view(ECS_TYPE(TransformComponent), ECS_TYPE(AsteroidTag));
+    for(size_t i = 0; i < entities.count; i++){
+        Entity e = entities.entities[i];
+        TransformComponent* transform = getComponent(e, TransformComponent);
+        ASSERT((transform), "Ecs movement failed, null component");
+        if( transform->position.x >=  gs->mainCamera.width  * 2  || 
+            transform->position.x <= -gs->mainCamera.width  * 2  ||
+            transform->position.y <= -gs->mainCamera.height * 2  ||
+            transform->position.y >=  gs->mainCamera.height * 2){
+                removeEntity(e);
+            }
+    }
+
+}
+
+GAME_API void gameStart(Arena* gameArena){
     if(gameArena->index > 0){
         return;
     }
     GameState* gs = arenaAllocStruct(gameArena, GameState);
     gs->arena = gameArena;
     gs->restart = false;
-    gs->mainCamera = createCamera(-640.0f / 2, 640.0f / 2, -320.0f / 2, 320.0f / 2);
+    gs->gameSize = {640, 320};
+    gs->mainCamera = createCamera(-gs->gameSize.x / 2, gs->gameSize.x / 2, -gs->gameSize.y / 2, gs->gameSize.y/ 2);
     setActiveCamera(&gs->mainCamera);
 
-    gs->iterations = 50;
-    gs->radius = 50;
-    gs->whiteTexture = getWhiteTexture();
+    srand(1);
+
     //---------------------------------------
     //trick to hot reload and prototype faster
     //TODO: remove
@@ -585,11 +715,42 @@ GAME_API void gameStart(Arena* gameArena, EngineState* engineState){
     //---------------------------------------
     gs->f = loadFont("Roboto-Regular", 24);
     gs->texture = loadTexture("awesome");
+    gs->finalTexture = loadRenderTexture(640, 320);
+
+    gs->gameTextures[PLAYER_TEXTURE] = loadWhiteTexture();
+
+    importCustomComponentModule();
+
+    //player creation
+    Entity e = createEntity();
+    gs->player = e;
+    TransformComponent transform;
+    transform.position = {0,0,0};
+    transform.rotation = {0,0,0};
+    transform.scale    = {1,1,1};
+    pushComponent(e, TransformComponent, &transform);
+    SpriteComponent sprite;
+    sprite.color = {1,1,1,1};
+    sprite.layer = 1;
+    sprite.size = {10, 10};
+    sprite.texture = &gs->gameTextures[PLAYER_TEXTURE];
+    sprite.visible = true;
+    sprite.ySort = true;
+    sprite.ySortOffset = 0;
+    pushComponent(e, SpriteComponent, &sprite);
+    VelocityComponent velocity;
+    velocity.vel = {0.0f, 0.0f};
+    pushComponent(e, VelocityComponent, &velocity);
+    AccelerationComponent acceleration = {};
+    acceleration.a = {0.0f, 0.0f};
+    pushComponent(e, AccelerationComponent, &acceleration);
+    PlayerTag playerTag;
+    pushComponent(e, PlayerTag, &playerTag);
 }
 
-GAME_API void gameRender(Arena* gameArena, EngineState* engine, float dt){}
+GAME_API void gameRender(Arena* gameArena, float dt){}
 
-GAME_API void gameUpdate(Arena* gameArena, EngineState* engineState, float dt){
+GAME_API void gameUpdate(Arena* gameArena, float dt){
     GameState* gs = (GameState*)gameArena->memory;
     //---------------------------------------
     //trick to hot reload and prototype faster
@@ -597,20 +758,39 @@ GAME_API void gameUpdate(Arena* gameArena, EngineState* engineState, float dt){
     state = gs->uiState;
     //---------------------------------------
 
-    beginScene();
+    //reimport modules for dll reload
+    importCustomComponentModule();
+
+    systemSpawnAsteroids(gs, dt);
+
+    //sytems updates
+    systemGameInput();
+    systemGravity(gs, dt);
+    systemMovement(dt);
+    systemDestroyAsteroids(gs);
+    //----------------
+
+    //render the game into the texture world
+    beginTextureMode(&gs->finalTexture);
         beginMode2D(gs->mainCamera);
-            clearColor(0, 0, 0, 1);
-            renderDrawText2D(&gs->f, "ciao", {0,0}, 1);
-            renderDrawRect({10,10}, {100,100}, {1,1,1,1});
-            renderDrawQuad2D({0,0},{100,100}, 0, &gs->texture);
-            //renderDrawFilledRect({0, 0}, {100,100}, 0, {1,1,1,1});
-            //renderDrawQuad2D({0,0}, {100,100}, 0, &gs->whiteTexture);
-            //renderDrawCirclePro({100,100},100,{0,0},{1,1,1,1}, 1);
+            clearColor(0.5f,0.5f,0.5f,1);
+            systemRenderEcs();
         endMode2D();
-            renderDrawQuad2D({0,0},{100,100}, 0, &gs->texture);
+    endTextureMode();
+
+    //World drawing on texture to never lose the initial resolution
+    Rect rect;
+    rect.pos = {0,0};
+    rect.size = {640, 320};
+    beginScene();
+        clearColor(0, 0, 0, 1);
+        renderDrawQuadPro2D(getScreenSize() * 0.5f, {rect.size.x, -rect.size.y},
+                            0, rect, {0.5f,0.5f}, &gs->finalTexture.texture);
     endScene();
-    drawHud(gs, gameArena);
+
+    //Ui Code -------------------------------------
+    //drawHud(gs, gameArena);
 }
 
-GAME_API void gameStop(Arena* gameArena, EngineState* engine){
+GAME_API void gameStop(Arena* gameArena){
 }

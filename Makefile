@@ -28,7 +28,8 @@ endif
 
 #Compilation
 CXX = clang++ -std=c++14
-CXXFLAGS = --target=x86_64-pc-windows-msvc -m64 -W -Wall -Wno-missing-field-initializers -g -O0 -D_CRT_SECURE_NO_WARNINGS $(CFLAGS) #-march=native #-fno-fast-math # da provare a inserire nel caso si hanno dei problemi con i calcoli metematici 
+#CXXFLAGS = --target=x86_64-pc-windows-msvc -m64 -W -Wall -Wno-missing-field-initializers -g -O0 -D_CRT_SECURE_NO_WARNINGS $(CFLAGS) #remove -Wno-unused-parameter -Wno-unused-variable to see all warnings #-march=native #-fno-fast-math # da provare a inserire nel caso si hanno dei problemi con i calcoli metematici 
+CXXFLAGS = --target=x86_64-pc-windows-msvc -m64 -W -Wall -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-variable -g -O0 -D_CRT_SECURE_NO_WARNINGS $(CFLAGS) #remove -Wno-unused-parameter -Wno-unused-variable to see all warnings #-march=native #-fno-fast-math # da provare a inserire nel caso si hanno dei problemi con i calcoli metematici 
 
 # LDFLAGS = -lgame -lshell32 -lopengl32 -lglfw3 -Xlinker /subsystem:console
 LIBS = -L Exis/external/libs/glfw -L Exis/external/libs/fmod -L Exis/external/libs/freetype

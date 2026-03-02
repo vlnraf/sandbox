@@ -65,4 +65,4 @@ CORE_API void destroyRenderTexture(RenderTexture* renderTexture);
 CORE_API void getImageFromTexture(void* image, Texture* texture, uint16_t format = TEXTURE_RGBA);
 CORE_API void setImageToTexture(void* image, Texture* texture, uint16_t format = TEXTURE_RGBA);
 Texture loadFontTexture(const char* path, FT_Face face);
-CORE_API Texture getWhiteTexture();
+CORE_API Texture loadWhiteTexture();

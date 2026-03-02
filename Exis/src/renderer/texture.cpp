@@ -65,7 +65,7 @@ Texture createTexture(const char* filePath){
     return texture;
 }
 
-Texture getWhiteTexture(){
+Texture loadWhiteTexture(){
     Texture whiteTexture = {};
     static uint8_t white[4] = {255, 255, 255, 255};
     whiteTexture.width = 1;

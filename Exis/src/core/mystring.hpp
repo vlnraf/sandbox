@@ -8,7 +8,7 @@ struct String8{
     uint64_t size;
 };
 
-#define String8Lit(s) String8{s, sizeof(s) - 1}
+#define String8Lit(s) String8{(char*)(s), sizeof(s) - 1}
 #define Str8VArg(s) (int)(s).size, (s).str
 
 CORE_API String8 cStringFromString8(Arena* arena, String8 string);

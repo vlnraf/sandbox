@@ -309,7 +309,7 @@ void initRenderer(Arena* arena, const uint32_t width, const uint32_t height){
     }
     setUniform(&renderer->shader, "sprite", samplers, MAX_TEXTURES_BIND);
 
-    renderer->textures[0] = getWhiteTexture();
+    renderer->textures[0] = loadWhiteTexture();
 
     LOGINFO("init renderer finished");
 }
