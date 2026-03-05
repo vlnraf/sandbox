@@ -568,7 +568,8 @@ void systemRenderEcs(){
 
 void systemGravity(GameState* gs, float dt){
     static float radius = 50;
-    static float gravity = 9.80f;
+    static float gravity = 90;
+    static float softening = 5;
     EntityArray entities = view(ECS_TYPE(TransformComponent),    ECS_TYPE(VelocityComponent),
                                 ECS_TYPE(AccelerationComponent), ECS_TYPE(AsteroidTag),
                                 ECS_TYPE(MassComponent));
@@ -586,24 +587,14 @@ void systemGravity(GameState* gs, float dt){
             ASSERT((transform2 && transform2 && mass2), "Ecs gravity failed, null component");
             if(glm::distance(transform->position, transform2->position) <= radius){
                 glm::vec2 diff = glm::vec2(transform2->position) - glm::vec2(transform->position);
+                float dist = glm::sqrt(glm::length(diff) + softening * softening);
+                float force = gravity * mass->v * mass2->v / (dist * dist);
+                glm::vec2 dir = glm::normalize(diff);
                 //glm::vec2 force = glm::normalize(diff);
-                acceleration2->a -= glm::normalize(diff) * gravity * mass->v;
-                acceleration->a  += glm::normalize(diff) * gravity * mass2->v;
-                //direction2->dir = glm::normalize(direction2->dir - force);
-                //direction->dir = glm::normalize(direction->dir + force);
-
-                //direction->dir.x = ;
-                //if(transform->position.y > transform2->position.y){
-                //    direction->dir.y -=  gravity * dt;
-                //}else if(transform->position.y < transform2->position.y){
-                //    direction->dir.y +=  gravity * dt;
-                //}
-                //if(transform->position.x > transform2->position.x){
-                //    direction->dir.x -=  gravity * dt;
-                //}else if(transform->position.x < transform2->position.x){
-                //    direction->dir.x +=  gravity * dt;
-                //}
-                //velocity->vel    = ;
+                //acceleration2->a -= glm::normalize(diff) * gravity * mass->v;
+                //acceleration->a  += glm::normalize(diff) * gravity * mass2->v;
+                acceleration2->a -= dir * (force / mass->v );
+                acceleration->a  += dir * (force / mass2->v);
             }
         }
     }
@@ -652,7 +643,7 @@ void systemSpawnAsteroids(GameState* gs, float dt){
         glm::vec2 spawnRange = gs->gameSize;
         int baseSize = 10;
         int maxSize = 20;
-        float baseSpeed = 5000.0f;
+        float baseSpeed = 10.0f;
         float size = (rand() % maxSize) + baseSize;
         Entity e = createEntity();
         TransformComponent transform = {};
@@ -671,10 +662,11 @@ void systemSpawnAsteroids(GameState* gs, float dt){
         sprite.ySortOffset = 0;
         pushComponent(e, SpriteComponent, &sprite);
         VelocityComponent velocity = {};
-        velocity.vel = {0, 0};
+        velocity.vel = glm::normalize(dir) * baseSpeed;
         pushComponent(e, VelocityComponent, &velocity);
         AccelerationComponent acceleration = {};
-        acceleration.a = glm::normalize(dir) * baseSpeed;
+        //acceleration.a = glm::normalize(dir) * baseSpeed;
+        acceleration.a = {10,10};
         pushComponent(e, AccelerationComponent, &acceleration);
         MassComponent mass = {};
         mass.v = size;

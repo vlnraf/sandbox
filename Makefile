@@ -32,8 +32,8 @@ CXX = clang++ -std=c++14
 CXXFLAGS = --target=x86_64-pc-windows-msvc -m64 -W -Wall -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-variable -g -O0 -D_CRT_SECURE_NO_WARNINGS $(CFLAGS) #remove -Wno-unused-parameter -Wno-unused-variable to see all warnings #-march=native #-fno-fast-math # da provare a inserire nel caso si hanno dei problemi con i calcoli metematici 
 
 # LDFLAGS = -lgame -lshell32 -lopengl32 -lglfw3 -Xlinker /subsystem:console
-LIBS = -L Exis/external/libs/glfw -L Exis/external/libs/fmod -L Exis/external/libs/freetype
-INCLUDE :=-I Exis/external/glfw/include -I Exis/external -I Exis/src -I Exis/external/fmod/core/inc 
+LIBS = -L Exis/external/libs/glfw -L Exis/external/libs/freetype
+INCLUDE :=-I Exis/external/glfw/include -I Exis/external -I Exis/src 
 INCLUDE_GAME :=-I game -I Exis/src -I Exis/external/ 
 
 #Sources
@@ -47,7 +47,6 @@ APP_SRC = \
 CORE_SRC = \
 	Exis/src/core/arena.cpp \
 	Exis/src/core/engine.cpp \
-	Exis/src/core/audioengine.cpp \
 	Exis/src/core/tracelog.cpp \
 	Exis/src/core/ecs.cpp \
 	Exis/src/core/input.cpp \
@@ -87,24 +86,21 @@ ifeq ($(OS),Windows_NT)
 copy_libs:
 	@echo "Copying required libraries..."
 	cmd /c copy /Y "Exis\\external\\libs\\glfw\\glfw3.dll" .
-	cmd /c copy /Y "Exis\\external\\libs\\fmod\\fmodL.dll" .
 else
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 copy_libs:
 	@echo "Copying required libraries..."
 	cp Exis/external/libs/glfw/libglfw.so .
-	cp Exis/external/libs/fmod/libfmodL.so .
 endif
 endif
 
-#NOTE: -lfmodL_vc is the debug version which print every error, just swap to -lfmod_vc for the realease build!!!
 core.$(SHARED_EXT): ${CORE_SRC} ${RENDERING_SRC} Exis/src/glad.o
 	@echo "Cleaning old core.dll"
 	$(REMOVE) *.o
 	$(REMOVE) core.$(SHARED_EXT)
 	@echo "Building the core library"
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBS) -lfreetype -lfmodL_vc -lglfw3 $(PLATFORM_LIBS) -DCORE_EXPORT -o $@ $^ -shared
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBS) -lfreetype -lglfw3 $(PLATFORM_LIBS) -DCORE_EXPORT -o $@ $^ -shared
 
 game.$(SHARED_EXT): ${GAME_SRC} 
 	$(REMOVE) game.pdb

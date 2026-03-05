@@ -71,10 +71,6 @@ void updateAndRender(){
     systemUpdateTransformChildEntities();
     systemUpdateColliderPosition();
     collisionEndFrame();
-    
-
-    //Audio update
-    updateAudio();
 
     if(app->debugMode){
         beginScene(RenderMode::NO_DEPTH);

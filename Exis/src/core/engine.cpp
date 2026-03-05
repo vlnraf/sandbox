@@ -39,12 +39,6 @@ EngineState* initEngine(uint32_t width, uint32_t height){
     initEcs(&engine->arena);
     LOGINFO("ECS sucessfully initialized");
     
-    if(!initAudioEngine()){
-        LOGERROR("AudioEngine not initilized");
-        return nullptr;
-    }
-    LOGINFO("Audio Engine sucessfully initialized");
-
     initAnimationManager();
 
     initCollisionManager(&engine->arena);
@@ -78,7 +72,6 @@ void updateEngineWindowSize(EngineState* engine, int width, int height){
 void destroyEngine(EngineState* engine){
     //destroyUIRenderer();
     destroyUI();
-    destroyAudioEngine();
     //destroyTextureManager();
     destroyAnimationManager();
     destroyEcs();
