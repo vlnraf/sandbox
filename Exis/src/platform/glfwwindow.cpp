@@ -14,10 +14,11 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height){
 
     // Update renderer resolution and recreate screen camera
     // Viewport is automatically managed by the render flow (beginTextureMode/endTextureMode)
-    setRenderResolution(width, height);
+    //float ar = width / height;
+    setRenderResolution(width, height );
     setViewport(0, 0, width, height);
 
-    // Update game camera to maintain aspect ratio
+    //// Update game camera to maintain aspect ratio
     //OrtographicCamera* gameCamera = getActiveCamera();
     //if(gameCamera){
     //    updateCameraAspectRatio(gameCamera, (float)width, (float)height);

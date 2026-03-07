@@ -12,7 +12,7 @@
 #include "texture.hpp"
 #include "fontmanager.hpp"
 #include "core/camera.hpp"
-#include "core/ecs.hpp"
+//#include "core/ecs.hpp"
 
 #define MAX_QUADS 10000
 #define MAX_VERTICES MAX_QUADS * 6

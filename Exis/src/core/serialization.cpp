@@ -1,3 +1,4 @@
+#if 0
 #include "serialization.hpp"
 #include "core/tracelog.hpp"
 
@@ -383,3 +384,4 @@ Node parseToNode(FILE* file){
     //    }
     //}
 }
+#endif

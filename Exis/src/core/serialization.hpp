@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include "ecs.hpp"
 #include "core/coreapi.hpp"
 #include <stdio.h>
@@ -43,3 +44,4 @@ struct Node{
 
 CORE_API Node serializeReadFile(const char* filePath);
 CORE_API Node* getNode(Node* node, const char* nodeName);
+#endif

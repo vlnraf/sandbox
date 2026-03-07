@@ -63,24 +63,24 @@ void updateAndRender(){
 
     registerGamepadInput(getInputState());
 
-    collisionStartFrame();
+    //collisionStartFrame();
     //systemUpdateTransformChildEntities(app->engine->ecs);
     //systemUpdateColliderPosition(app->engine->ecs);
-    updateCollisions();
+    //updateCollisions();
     platformGameUpdate(&app->engine->gameArena, app->dt);
-    systemUpdateTransformChildEntities();
-    systemUpdateColliderPosition();
-    collisionEndFrame();
+    //systemUpdateTransformChildEntities();
+    //systemUpdateColliderPosition();
+    //collisionEndFrame();
 
-    if(app->debugMode){
-        beginScene(RenderMode::NO_DEPTH);
-            beginMode2D(*getActiveCamera());
-                renderGrid();
-                systemRenderColliders();
-            endMode2D();
-        endScene();
-    }
-    ecsEndFrame();
+    //if(app->debugMode){
+    //    beginScene(RenderMode::NO_DEPTH);
+    //        beginMode2D(*getActiveCamera());
+    //            renderGrid();
+    //            systemRenderColliders();
+    //        endMode2D();
+    //    endScene();
+    //}
+    //ecsEndFrame();
 
     windowSwapBuffers(&app->window);
     app->endFrame = glfwGetTime();
