@@ -411,8 +411,14 @@ Cell* getGridCell(WorldGrid* grid, int i, int j){
 }
 
 glm::vec2 gridPosToWorld(WorldGrid* grid, int i, int j){
-    glm::vec2 center = glm::vec2(i + 0.5f , j + 0.5f);
+    //glm::vec2 center = glm::vec2(i + 0.5f , j + 0.5f);
+    glm::vec2 center = glm::vec2(i, j);
     return glm::vec2(center.x * grid->cellSize, center.y * grid->cellSize) - (glm::vec2(grid->size) * grid->cellSize * 0.5f);
+}
+
+glm::ivec2 worldPosToGrid(WorldGrid* grid, glm::vec2 pos ){
+    glm::ivec2 gridPos = glm::ivec2(glm::floor((pos + glm::vec2(grid->size) * grid->cellSize * 0.5f) / grid->cellSize));
+    return gridPos;
 }
 
 GAME_API void gameStart(Arena* gameArena){
@@ -438,7 +444,7 @@ GAME_API void gameStart(Arena* gameArena){
 
     //Grid world
     gs->worldGrid = {};
-    glm::vec2 gridSize = {24, 14};
+    glm::vec2 gridSize = {25, 15};
     gs->worldGrid.size = gridSize;
     gs->worldGrid.cell = arenaAllocArray(gs->arena, Cell, gridSize.x * gridSize.y);
     gs->worldGrid.cellSize = 16;
@@ -456,6 +462,7 @@ GAME_API void gameStart(Arena* gameArena){
     gs->units->pos = {0,0};
 
     gs->gameTextures[PLAYER_TEXTURE] = loadWhiteTexture();
+    gs->t = loadTexture("awesome");
 }
 
 GAME_API void gameRender(Arena* gameArena, float dt){}
@@ -472,10 +479,7 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     TempArena temp = getTempArena(gs->arena);
     float scale = 2.0f;
     glm::vec2 mouseWorld = getMouseWorld(gs, scale);
-    glm::ivec2 mouseGrid = glm::floor(mouseWorld / gs->worldGrid.cellSize);
-    mouseGrid = mouseGrid + glm::ivec2(glm::round(glm::vec2(gs->worldGrid.size) * 0.5f));
-    LOGINFO("%f, %f", mouseWorld.x, mouseWorld.y);
-    LOGINFO("%d, %d", mouseGrid.x, mouseGrid.y);
+    glm::ivec2 mouseGrid = worldPosToGrid(&gs->worldGrid, mouseWorld);
     String8 indexT = pushString8F(temp.arena, "%d, %d", mouseGrid.x, mouseGrid.y);
     String8 mouseWorldT = pushString8F(temp.arena, "%f, %f", mouseWorld.x, mouseWorld.y);
 
@@ -493,15 +497,27 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             for(int j = 0; j < gridSize.y; j++){
                 for(int i = 0; i < gridSize.x; i++){
                     glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i , j);
-                    renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, bgColor, LAYER_BG);
-                    renderDrawFilledRect(cellPos, glm::vec2(10), 0, {1,0,0,1}, LAYER_BG);
-                    //renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0,1}, bgColor, LAYER_BG);
-                    //renderDrawFilledRectPro(cellPos, glm::vec2(10), 0, {0,1}, {1,0,0,1}, LAYER_BG);
+                    if(aabb(mouseWorld, cellPos, {16,16})){
+                        renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, {0,0,1,1}, LAYER_BG);
+                    }else{
+
+                    //renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, bgColor, LAYER_BG);
+                    //renderDrawFilledRect(cellPos, glm::vec2(10), 0, {1,0,0,1}, LAYER_BG);
+                    renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, bgColor, LAYER_BG);
+                    //renderDrawFilledRectPro(cellPos, glm::vec2(10), 0, {0.5, 0.5}, {1,0,0,1}, LAYER_BG);
                     renderDrawRect(cellPos, glm::vec2(cellSize), borderColor, LAYER_BG);
+                    }
                 }
             }
             Unit* player = &gs->units[0];
             glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->pos.x , player->pos.y);
+            static bool dragging = false;
+            if(mouseGrid == player->pos){
+                dragging = true;
+            }
+            if(dragging){
+                player->pos = mouseGrid;
+            }
             renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, {1,1,1,1}, LAYER_BG);
 
             //debug center lines
@@ -527,7 +543,7 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     beginScene();
         clearColor(0, 0, 0, 1);
         renderDrawText2D(&gs->f, indexT.str ,{10,20}, 1);
-        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,30}, 1);
+        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,50}, 1);
         renderDrawQuadPro2D(pos, {size.x, -size.y},
                             0, rect, {0.0f,0.0f}, &gs->finalTexture.texture);
     endScene();

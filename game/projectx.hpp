@@ -55,6 +55,7 @@ struct GameState{
     //UiState* uiState;
     RenderTexture finalTexture;
     Texture gameTextures[MAX_GAME_TEXTURES];
+    Texture t;
     glm::vec2 gameSize;
 
     WorldGrid worldGrid;
