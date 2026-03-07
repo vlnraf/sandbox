@@ -61,6 +61,7 @@ struct GameState{
 
     WorldGrid worldGrid;
     Unit* units;
+    int maxUnits;
 
     bool pause = false;
 };

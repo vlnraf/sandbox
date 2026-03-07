@@ -449,7 +449,7 @@ GAME_API void gameStart(Arena* gameArena){
 
     //Grid world
     gs->worldGrid = {};
-    glm::vec2 gridSize = {25, 15};
+    glm::ivec2 gridSize = {25, 15};
     gs->worldGrid.size = gridSize;
     gs->worldGrid.cell = arenaAllocArray(gs->arena, Cell, gridSize.x * gridSize.y);
     gs->worldGrid.cellSize = 16;
@@ -462,10 +462,17 @@ GAME_API void gameStart(Arena* gameArena){
     }
 
     // Units
-    gs->units = arenaAllocArray(gs->arena, Unit, 1);
-    gs->units->type = UNIT_PLAYER;
-    gs->units->pos = {0,0};
-    gs->units->movement = 5;
+    gs->maxUnits = 16;
+    gs->units = arenaAllocArray(gs->arena, Unit, gs->maxUnits);
+    for(int i = 1; i < gs->maxUnits; i++){
+        gs->units[i].type = UNIT_ENEMY;
+        glm::vec2 pos = glm::vec2(rand() % gridSize.x, rand() % gridSize.y);
+        gs->units[i].pos = pos;
+        gs->units[i].movement = 2;
+    }
+    gs->units[0].type = UNIT_PLAYER;
+    gs->units[0].pos = {0,0};
+    gs->units[0].movement = 2;
 
     gs->gameTextures[PLAYER_TEXTURE] = loadWhiteTexture();
     gs->t = loadTexture("awesome");
@@ -503,7 +510,7 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                     Cell* c = getGridCell(&gs->worldGrid, i, j);
                     glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i , j);
                     glm::vec4 bgColor       = {0.2, 0.5, 0.2, 1.0f};
-                    glm::vec4 borderColor   = {1.0, 0.0, 0.0, 1.0f};
+                    glm::vec4 borderColor   = {0.0, 0.0, 0.0, 1.0f};
                     if(aabb(mouseWorld, cellPos, {16,16})){
                         renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, {0,0,1,1}, LAYER_BG);
                     }else{
@@ -526,17 +533,35 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->pos)){
                 initialPos = player->pos;
                 dragging = true;
-            }
-            if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)
-                && mouseGrid.x <= initialPos.x + 2 && mouseGrid.x >= initialPos.x -2 &&
-                mouseGrid.y <= initialPos.y + 2 && mouseGrid.y >= initialPos.y -2 ){
+            } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)
+                && mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement 
+                && mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
                 dragging = false;
                 //finalPos = mouseGrid;
                 initialPos = player->pos;
                 player->pos = mouseGrid;
             }
-            LOGINFO("%d", dragging);
-            renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, {1,1,1,1}, LAYER_BG);
+            if(dragging){
+                for(int j = initialPos.y - player->movement; j <= initialPos.y + player->movement; j++){
+                    for(int i = initialPos.x - player->movement; i <= initialPos.x + player->movement; i++){
+                        glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i, j);
+                        renderDrawRect(cellPos, glm::vec2(gs->worldGrid.cellSize), {0.8f, 0.4f, 0.0f, 1.0f});
+                    }
+                }
+            }
+            for(int i = 0; i < gs->maxUnits; i++){
+                glm::vec4 unitColor;
+                glm::vec4 playerColor = {1,1,1,1};
+                glm::vec4 enemyColor = {1,0,0,1};
+                Unit* unit = &gs->units[i];
+                glm::vec2 unitPos = gridPosToWorld(&gs->worldGrid, unit->pos.x, unit->pos.y);
+                if(unit->type == UNIT_PLAYER){
+                    unitColor = playerColor;
+                }else if(unit->type == UNIT_ENEMY){
+                    unitColor = enemyColor;
+                }
+                renderDrawFilledRect(unitPos, glm::vec2(cellSize), 0, unitColor, LAYER_BG);
+            }
 
             //debug center lines
             glm::vec2 p0x = glm::vec2(-gs->gameSize.x, 0);// gs->gameSize.y * 0.5f);
