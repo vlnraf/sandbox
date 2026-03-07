@@ -416,9 +416,14 @@ glm::vec2 gridPosToWorld(WorldGrid* grid, int i, int j){
     return glm::vec2(center.x * grid->cellSize, center.y * grid->cellSize) - (glm::vec2(grid->size) * grid->cellSize * 0.5f);
 }
 
-glm::ivec2 worldPosToGrid(WorldGrid* grid, glm::vec2 pos ){
+glm::ivec2 worldPosToGrid(WorldGrid* grid, glm::vec2 pos){
     glm::ivec2 gridPos = glm::ivec2(glm::floor((pos + glm::vec2(grid->size) * grid->cellSize * 0.5f) / grid->cellSize));
     return gridPos;
+}
+
+glm::ivec2 bfs(WorldGrid* grid, int i, int j, int movement){
+    glm::ivec2 result;
+    return result;
 }
 
 GAME_API void gameStart(Arena* gameArena){
@@ -460,6 +465,7 @@ GAME_API void gameStart(Arena* gameArena){
     gs->units = arenaAllocArray(gs->arena, Unit, 1);
     gs->units->type = UNIT_PLAYER;
     gs->units->pos = {0,0};
+    gs->units->movement = 5;
 
     gs->gameTextures[PLAYER_TEXTURE] = loadWhiteTexture();
     gs->t = loadTexture("awesome");
@@ -483,8 +489,6 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     String8 indexT = pushString8F(temp.arena, "%d, %d", mouseGrid.x, mouseGrid.y);
     String8 mouseWorldT = pushString8F(temp.arena, "%f, %f", mouseWorld.x, mouseWorld.y);
 
-    glm::vec4 bgColor       = {0.2, 0.5, 0.2, 1.0f};
-    glm::vec4 borderColor   = {1.0, 0.0, 0.0, 1.0f};
     //render the game into the texture world
     glm::ivec2 gridSize = gs->worldGrid.size;
     float cellSize = gs->worldGrid.cellSize;
@@ -496,7 +500,10 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             //draw grid
             for(int j = 0; j < gridSize.y; j++){
                 for(int i = 0; i < gridSize.x; i++){
+                    Cell* c = getGridCell(&gs->worldGrid, i, j);
                     glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i , j);
+                    glm::vec4 bgColor       = {0.2, 0.5, 0.2, 1.0f};
+                    glm::vec4 borderColor   = {1.0, 0.0, 0.0, 1.0f};
                     if(aabb(mouseWorld, cellPos, {16,16})){
                         renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, {0,0,1,1}, LAYER_BG);
                     }else{
@@ -504,20 +511,31 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                     //renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, bgColor, LAYER_BG);
                     //renderDrawFilledRect(cellPos, glm::vec2(10), 0, {1,0,0,1}, LAYER_BG);
                     renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, bgColor, LAYER_BG);
-                    //renderDrawFilledRectPro(cellPos, glm::vec2(10), 0, {0.5, 0.5}, {1,0,0,1}, LAYER_BG);
+                    //renderDrawFilledRectPro(cellPos + 4.0f, glm::vec2(8), 0, {0.0, 0.0}, {1,0,0,1}, LAYER_BG);
                     renderDrawRect(cellPos, glm::vec2(cellSize), borderColor, LAYER_BG);
                     }
                 }
             }
             Unit* player = &gs->units[0];
             glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->pos.x , player->pos.y);
-            static bool dragging = false;
-            if(mouseGrid == player->pos){
+            static bool dragging;
+            static glm::ivec2 initialPos;
+            static glm::ivec2 finalPos;
+            //LOGINFO("%d", (mouseGrid == player->pos));
+            //LOGINFO("%d", isMouseButtonJustPressed(MOUSE_BUTTON_LEFT));
+            if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->pos)){
+                initialPos = player->pos;
                 dragging = true;
             }
-            if(dragging){
+            if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)
+                && mouseGrid.x <= initialPos.x + 2 && mouseGrid.x >= initialPos.x -2 &&
+                mouseGrid.y <= initialPos.y + 2 && mouseGrid.y >= initialPos.y -2 ){
+                dragging = false;
+                //finalPos = mouseGrid;
+                initialPos = player->pos;
                 player->pos = mouseGrid;
             }
+            LOGINFO("%d", dragging);
             renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, {1,1,1,1}, LAYER_BG);
 
             //debug center lines

@@ -37,6 +37,7 @@ enum UnitType{
 struct Unit{
     UnitType type;
     glm::ivec2 pos;
+    int movement;
 };
 
 struct WorldGrid{
