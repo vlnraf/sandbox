@@ -25,22 +25,40 @@ enum GameTextures{
     PLAYER_TEXTURE = 0,
 };
 
+struct Cell{
+    bool walkable;
+};
+
+enum UnitType{
+    UNIT_PLAYER,
+    UNIT_ENEMY
+};
+
+struct Unit{
+    UnitType type;
+    glm::ivec2 pos;
+};
+
+struct WorldGrid{
+    glm::ivec2 size;
+    Cell* cell;
+    float cellSize;
+};
+
+
 struct GameState{
     Arena* arena;
     OrtographicCamera mainCamera;
     bool restart;
 
-    float radius;
-    int iterations;
     Font f;
-    UiState* uiState;
-    Texture texture;
-    Texture whiteTexture;
+    //UiState* uiState;
     RenderTexture finalTexture;
     Texture gameTextures[MAX_GAME_TEXTURES];
     glm::vec2 gameSize;
-    Entity player;
 
+    WorldGrid worldGrid;
+    Unit* units;
 
     bool pause = false;
 };

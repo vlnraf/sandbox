@@ -1,5 +1,4 @@
 #include "projectx.hpp"
-#include "customcomponents.hpp"
 
 #define ASSERT(condition, msg) \
     do { \
@@ -45,6 +44,17 @@ struct UiRenderCommandArray{
     UiRenderCommand* items;
 };
 
+enum UiLayoutType{
+    LAYOUT_VERTICAL,
+    LAYOUT_HORIZONTAL,
+};
+
+struct UiLayout{
+    UiLayoutType type;
+    glm::vec2 size;
+    uint32_t items;
+};
+
 struct UiStyle{
     glm::vec4 bg, panelBg;
     glm::vec4 barColor;
@@ -55,19 +65,16 @@ struct UiStyle{
 
 struct Context{
     String8 label;
+    UiLayout* layout;
     uint32_t panelIdx;   // index into renderCommands where the panel background is reserved
     glm::vec2 pos;       // anchor point of the panel (screen space, y-up from bottom-left)
-    glm::vec2 size;      // final computed size, filled in by endPanel
     glm::vec2 barPos;    // position of the title bar
     glm::vec2 barSize;   // size of the title bar
-    glm::vec2 ctxPos;    // cursor: where the next widget will be placed (moves down each widget)
+    glm::vec2 ctxPos;    // bottom-left of the content area (used for panel background rect)
     glm::vec2 ctxSize;   // accumulated content area size (grows as widgets are added)
+    glm::vec2 cursorPos; // where the next widget will be placed
     float padding;
     float spacing;       // gap between widgets
-    float border;
-    // lineEnd holds the right/top edge of the last placed widget.
-    // sameLine swaps ctxPos <-> lineEnd to continue on the same line instead of going down.
-    glm::vec2 lineEnd;
 };
 
 struct UiState{
@@ -121,59 +128,50 @@ UiState* initUi(Arena* arena){
 }
 
 bool aabb(glm::vec2 mousePos, glm::vec2 widgetPos, glm::vec2 widgetSize){
-    return (mousePos.x >= widgetPos.x && mousePos.x <= widgetPos.x + widgetSize.x &&
-            mousePos.y >= widgetPos.y && mousePos.y <= widgetPos.y + widgetSize.y);
-}
-
-// Swap ctxPos and lineEnd so the next widget is placed to the right of the previous one
-// instead of below it. advanceContext always writes the "next line" position into lineEnd,
-// so swapping restores the horizontal continuation point.
-void sameLine(){
-    Context* c = &state->c[state->ctxCount-1];
-
-    glm::vec2 temp;
-    temp = c->ctxPos;
-    c->ctxPos.x = c->lineEnd.x;
-    c->lineEnd.x = temp.x;
-    temp = c->ctxPos;
-    c->ctxPos.y = c->lineEnd.y;
-    c->lineEnd.y = temp.y;
+    return (mousePos.x > widgetPos.x && mousePos.x < widgetPos.x + widgetSize.x &&
+            mousePos.y > widgetPos.y && mousePos.y < widgetPos.y + widgetSize.y);
 }
 
 void setStyle(UiState* ctx, const UiStyle* style){
     state->style = *style;
 }
 
-
-//void drawTextBox(Arena* a, glm::vec2 pos, glm::vec2 size){
-//    TempArena tmp = getTempArena(a);
-//    Font* f = getFont("Roboto-Regular");
-//    renderDrawFilledRect(pos, size, 0, {0.3,0.3,0.3,1});
-//    String8 text;
-//    if(aabb(mousePos, pos, size)){
-//        if(isJustPressed(KEYS::A)){
-//            text = pushString8F(tmp.arena, "%c", 'a');
-//        }
-//    }
-//    String8 result = pushString8F(a, "%S", text);
-//    renderDrawText2D(&f, result.str, pos, 1);
-//    releaseTempArena(tmp);
-//}
-
-// Move the cursor down by the widget height and update the accumulated content size.
-// Also records lineEnd = right/top edge of this widget, which sameLine uses to
-// continue horizontally. ctxPos.x is reset to the panel left edge after each widget.
-// NOTE: always advances Y regardless of sameLine — mixed-height same-line rows will drift.
+// Advance the cursor after placing a widget.
+// With no layout: moves Y down, resets X to panel left (vertical stacking).
+// With LAYOUT_HORIZONTAL: moves X right by cell width; wraps to next row after `items` cells.
+// With LAYOUT_VERTICAL: moves Y down by cell height.
 void advanceContext(Context* c, glm::vec2 size){
-    c->ctxPos.y -= size.y;
-    c->ctxSize.y = c->pos.y - c->ctxPos.y;
-    // width is the max right edge seen so far (lineEnd.x tracks the widest row)
-    c->ctxSize.x = c->lineEnd.x - c->pos.x;
-    c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
-
-    c->lineEnd.x = c->ctxPos.x + size.x; // right edge of this widget
-    c->lineEnd.y = c->ctxPos.y + size.y; // top edge of this widget (for sameLine Y restore)
-    c->ctxPos.x = c->pos.x;              // reset X to panel left
+    if(c->layout){
+        if(c->layout->type == LAYOUT_HORIZONTAL){
+            float cellW = c->layout->size.x / (float)c->layout->items;
+            float cellH = c->layout->size.y;
+            c->cursorPos.x += cellW;
+            //c->cursorPos.y = glm::min(cellH, c->cursorPos.y);
+            // wrap: if next cell would exceed layout width, go to next row
+            //if(c->cursorPos.x - c->pos.x >= c->layout->size.x - cellW` * 0.5f){
+            //    c->cursorPos.x = c->pos.x;
+            //    c->cursorPos.y -= cellH + c->spacing;
+            //}
+            c->ctxSize.x = glm::max(c->ctxSize.x, c->layout->size.x);
+            c->ctxSize.y = glm::max(c->ctxSize.y, c->pos.y - c->cursorPos.y);
+            c->ctxPos = {c->ctxPos.x, c->cursorPos.y - cellH};
+        } else { // LAYOUT_VERTICAL
+            float cellH = c->layout->size.y / (float)c->layout->items;
+            c->cursorPos.y -= cellH;// + c->spacing;
+            c->ctxSize.x = glm::max(c->ctxSize.x, c->layout->size.x);
+            c->ctxSize.y = glm::max(c->ctxSize.y, c->pos.y - c->cursorPos.y);
+        }
+        c->ctxPos.y = glm::min(c->ctxPos.y, c->cursorPos.y);
+        //c->ctxPos.y = glm::min(c->ctxPos.y, size.y);
+    } else {
+        // default vertical stacking: natural widget size
+        c->cursorPos.y -= size.y;// + c->spacing;
+        c->ctxSize.y = c->pos.y - c->barSize.y - c->cursorPos.y;
+        c->ctxSize.x = glm::max(c->ctxSize.x, size.x);
+        c->ctxSize.x = glm::max(c->ctxSize.x, c->barSize.x);
+        c->cursorPos.x = c->pos.x;
+        c->ctxPos.y = glm::min(c->ctxPos.y, c->cursorPos.y);
+    }
 }
 
 bool button(String8 label){
@@ -187,12 +185,19 @@ bool button(String8 label){
 
     float tWidth = calculateTextWidth(&state->f, label.str, 1);
     float tHeight = calculateTextHeight(&state->f, label.str, 1);
-    glm::vec2 size = {tWidth, tHeight};
+    glm::vec2 size;
+    if(c->layout){
+        if(c->layout->type == LAYOUT_HORIZONTAL){
+            size = {c->layout->size.x / (float)c->layout->items, c->layout->size.y};
+        }else{
+            size = {c->layout->size.x, c->layout->size.y / (float)c->layout->items};
+        }
+    } else {
+        size = {tWidth, tHeight};
+    }
 
     glm::vec4 color = state->style.bg;
-    // ctxPos is the cursor top edge; widget renders from (ctxPos.y - size.y) upward (y-up coords)
-    glm::vec2 pos;
-    pos = {c->ctxPos.x , c->ctxPos.y - size.y };
+    glm::vec2 pos = {c->cursorPos.x, c->cursorPos.y - size.y};
 
     if(aabb(state->mousePos, pos, size)){
         color = state->style.hot;
@@ -224,196 +229,47 @@ bool button(String8 label){
     command.color   = state->style.text;
     state->renderCommands.items[state->renderCommands.lenght++] = command;
 
-    //advance only on y direction
-    //branch it when adding horizontal layout
-    advanceContext(c, {size.x , size.y });
+    advanceContext(c, size);
     return result;
 }
 
-bool buttonEx(String8 label, glm::vec2 pos, glm::vec2 size){
-    if(state->ctxCount == 0){
-        LOGERROR("No context");
-        return false;
-    }
-    uint32_t id = hashId(label);
-
-    glm::vec4 color = state->style.bg;
-    glm::vec2 screenPos = {pos.x, getScreenSize().y - pos.y - size.y};
-    if(aabb(state->mousePos, screenPos, size)){
-        color = state->style.hot;
-        state->hover = id;
-    }
-    if(state->hover == id){
-        if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-            color = state->style.active;
-            state->active = id;
-        }
-    }
-    renderDrawFilledRect(screenPos, size, 0, color);
-    renderDrawText2D(&state->f, label.str, screenPos, 1, state->style.text);
-    return state->active == id;
+UiLayout makeLayout(UiLayoutType type, glm::vec2 size, uint32_t items){
+    UiLayout layout = {};
+    layout.type = type;
+    layout.size = size;
+    layout.items = items;
+    return layout;
 }
 
-bool checkBox(String8 label, bool *value){
-    if(state->ctxCount == 0){
-        LOGERROR("No context");
-        return false;
-    }
-    Context* c = &state->c[state->ctxCount - 1];
-    uint32_t id = hashId(label);
-
-    float tWidth = calculateTextWidth(&state->f, label.str, 1);
-    float tHeight = calculateTextHeight(&state->f, label.str, 1);
-    glm::vec2 pos = {0,0};
-    glm::vec2 textPos = pos;
-    glm::vec2 size = {tHeight, tHeight}; //checkbox size equalt to text height
-    
-    pos = {c->ctxPos.x + tWidth, c->ctxPos.y - tHeight};
-    textPos = {c->ctxPos.x, c->ctxPos.y - size.y};
-    c->ctxSize.y -= size.y + c->padding;
-
-
-    glm::vec4 color = state->style.bg;
-    if(aabb(state->mousePos, pos, size)){
-        state->hover = id;
-    }
-    if(state->hover == id){
-        if(isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)){
-            color = state->style.active;
-            state->active = id;
-            *value = !(*value);
-        }
-    }
-    renderDrawFilledRect(pos, size, 0, state->style.bg);
-    if(*value){
-        color = state->style.active;
-        renderDrawFilledRect(pos + size * 0.5f * 0.5f, size * 0.5f, 0, color);
-    }
-    renderDrawText2D(&state->f, label.str, textPos, 1);
-    return state->active == id;
+void pushLayout(UiLayout* layout){
+    Context* c = &state->c[state->ctxCount-1];
+    ASSERT(c, "No context in the stack");
+    c->layout = layout;
 }
 
-bool slider(Arena* a, String8 label, float* value, float min, float max){
-    if(state->ctxCount == 0){
-        LOGERROR("No context");
-        return false;
-    }
-    Context* c = &state->c[state->ctxCount - 1];
-    uint32_t id = hashId(label);
+void popLayout(){
 
-    String8 text = pushString8F(a, "%.1f", *value);
-    float tWidth = calculateTextWidth(&state->f, text.str, 1);
-    float tHeight = calculateTextHeight(&state->f, text.str, 1);
-
-    float labelWidth = calculateTextWidth(&state->f, label.str, 1);
-    glm::vec2 labelPos;
-
-    glm::vec2 size = {c->ctxSize.x , tHeight};
-    glm::vec2 pos = {0,0};
-    glm::vec2 sSize = {size.x * 0.1f , size.y};
-    glm::vec2 sPos = {0,0};
-    c->ctxPos.y -= size.y;
-    c->ctxSize.y -= size.y;
-    labelPos = {c->ctxPos.x, c->ctxPos.y};
-    pos = {c->ctxPos.x + labelWidth, c->ctxPos.y };
-    sPos = {pos.x + ((*value / max) * (size.x)) - sSize.x * 0.5f, pos.y };
-    c->ctxSize.y -= size.y + c->padding;
-
-    glm::vec4 color = state->style.bg;
-    if(aabb(state->mousePos, pos, size)){
-        state->hover = id;
-        color = state->style.hot;
-    }
-
-    if(state->hover == id){
-        if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-            state->active = id;
-            sPos.x = state->mousePos.x - sSize.x * 0.5f;
-            float norm = ((sPos.x - pos.x + sSize.x * 0.5f) / size.x) * max;
-            *value = glm::clamp(norm, min, max);
-            color = state->style.active;
-        }
-    }
-    glm::vec2 textPos = {pos.x + size.x * 0.5f - tWidth * 0.5f, pos.y};
-
-    renderDrawText2D(&state->f, label.str, {labelPos.x, labelPos.y}, 1);
-    renderDrawText2D(&state->f, text.str, {textPos.x, textPos.y}, 1);
-    renderDrawFilledRect({pos.x, pos.y}, size, 0, color);
-    renderDrawFilledRect({sPos.x, sPos.y}, sSize, 0, color);
-
-    return state->active == id;
-}
-
-bool sliderInt(Arena* a, String8 label, int* value, int min, int max){
-    if(state->ctxCount == 0){
-        LOGERROR("No context");
-        return false;
-    }
-    Context* c = &state->c[state->ctxCount - 1];
-    uint32_t id = hashId(label);
-
-    String8 text = pushString8F(a, "%d", *value);
-    float tWidth = calculateTextWidth(&state->f, text.str, 1);
-    float tHeight = calculateTextHeight(&state->f, text.str, 1);
-
-    float labelWidth = calculateTextWidth(&state->f, label.str, 1);
-    glm::vec2 labelPos;
-
-    glm::vec2 size = {c->ctxSize.x - labelWidth - c->padding, tHeight};
-    glm::vec2 pos = {0,0};
-    glm::vec2 sSize = {size.x * 0.1f , size.y};
-    glm::vec2 sPos = {0,0};
-    c->ctxPos.y -= size.y;
-    c->ctxSize.y -= size.y;
-    labelPos = {c->ctxPos.x, c->ctxPos.y};
-    pos = {c->ctxPos.x + labelWidth, c->ctxPos.y };
-    sPos = {pos.x + (((float)*value / max) * (size.x)) - sSize.x * 0.5f, pos.y };
-    c->ctxSize.y -= size.y + c->padding;
-
-    glm::vec4 color = state->style.bg;
-    if(aabb(state->mousePos, pos, size)){
-        state->hover = id;
-        color = state->style.hot;
-    }
-
-    if(state->hover == id){
-        if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-            state->active = id;
-            sPos.x = state->mousePos.x - sSize.x * 0.5f;
-            int norm = glm::floor(((sPos.x - pos.x + sSize.x * 0.5f) / size.x) * max);
-            *value = (int)glm::clamp(norm, min, max);
-            color = state->style.active;
-        }
-    }
-    glm::vec2 textPos = {pos.x + size.x * 0.5f - tWidth * 0.5f, pos.y};
-
-    renderDrawText2D(&state->f, label.str, {labelPos.x, labelPos.y}, 1);
-    renderDrawText2D(&state->f, text.str, {textPos.x, textPos.y}, 1);
-    renderDrawFilledRect({pos.x, pos.y}, size, 0, color);
-    renderDrawFilledRect({sPos.x, sPos.y}, sSize, 0, color);
-
-    return state->active == id;
 }
 
 void beginPanel(String8 title, glm::vec2 pos, glm::vec2 size){
     ASSERT(state->ctxCount < 16, "UI context stack overflow");
-    Context c;
-    c.label = title;
-    c.pos = {pos.x, getScreenSize().y - pos.y};
-    c.size = size;
-    c.size = {0,0}; //assign a default size???
-    c.padding = 5;  //should be elsewhere??
-    c.spacing = 5;  //should be elsewhere??
-    c.ctxPos = c.pos;
-    c.lineEnd = c.ctxPos;
-    c.ctxSize = {0,0};
+    Context c = {};
+    c.label    = title;
+    //c.layout   = LAYOUT_VERTICAL;
+    c.pos      = {pos.x, getScreenSize().y - pos.y};
+    c.padding  = 5;
+    c.spacing  = 5;
+    c.ctxPos   = c.pos;
+    c.cursorPos = c.pos;
+    c.ctxSize  = {0,0};//layout ? layout->size : glm::vec2{0, 0};
     float textHeight = calculateTextHeight(&state->f, title.str, 1);
-    float textWidth = calculateTextWidth(&state->f, title.str, 1);
-    c.barSize = {textWidth, textHeight};
-    c.barPos = {c.pos.x, c.pos.y - c.barSize.y};
+    float textWidth  = calculateTextWidth(&state->f, title.str, 1);
+    c.barSize  = {textWidth, textHeight};
+    c.barPos   = {c.pos.x, c.pos.y - c.barSize.y};
     state->renderCommands.lenght++;
-    c.panelIdx = state->renderCommands.lenght-1;
-    advanceContext(&c, {c.barSize.x, c.barSize.y});
+    c.panelIdx = state->renderCommands.lenght - 1;
+    c.cursorPos.y -= c.barSize.y;// + c.spacing;
+    //advanceContext(&c, c.barSize);
     state->c[state->ctxCount++] = c;
 }
 
@@ -428,7 +284,7 @@ void endPanel(){
     command.color   = state->style.barColor;
     state->renderCommands.items[state->renderCommands.lenght++] = command;
     command.type    = UI_RECTANGLE;
-    command.pos     = {c->pos.x, c->ctxPos.y};
+    command.pos     = c->ctxPos;
     command.size    = c->ctxSize;
     command.color   = state->style.panelBg;
     state->renderCommands.items[c->panelIdx] = command;
@@ -447,10 +303,6 @@ void begin(){
     state->hover = 0;
     Context c;
     c.pos = {0,getScreenSize().y};
-    c.size = getScreenSize();
-    c.padding = 10;
-    c.ctxSize.x = c.size.x;
-    c.ctxSize.y = c.size.y;
     state->c[state->ctxCount++] = c;
     state->mousePos = getMousePos();
 }
@@ -469,24 +321,10 @@ void drawHud(GameState* gs, Arena* a){
     glm::vec2 panelPos = {10,10};
     float padding = 10;
     int columns = 5;
-            static bool t = false;
-            static bool showPanel = false;
+    static bool t = false;
+    static bool showPanel = false;
     begin();
-    beginScene(NO_DEPTH);
-    //clearColor(0,0,0,1);
-        //Right Panel
-        //drawRightPanel(tmp.arena, panelPos, panelSize, padding, columns);
-        //columns = 5;
-        //beginPanel(String8Lit("Test"), {0,0}, panelSize);
-        //if(button(String8Lit("OPS"))){
-        //beginPanel(String8Lit("Test"), {300,300}, {300,300});
-        //    slider(tmp.arena, String8Lit("radius"), &gs->radius, 1, 50);
-        //    sliderInt(tmp.arena, String8Lit("iterations"), &gs->iterations, 1, 1000);
-        //endPanel();
-
-        //}
-        //button(String8Lit("OPS2"));
-        //button(String8Lit("OPS3"));
+    clearColor(0,0,0,0);
         beginPanel(String8Lit("Test"), panelPos, panelSize);
             if(button(String8Lit("O"))){
                 showPanel = !showPanel;
@@ -499,42 +337,31 @@ void drawHud(GameState* gs, Arena* a){
                 endPanel();
             }
             button(String8Lit("O"));
-            sameLine();
             button(String8Lit("OP"));
-            sameLine();
             button(String8Lit("OPS"));
-            sameLine();
             button(String8Lit("OPSS"));
-            sameLine();
             button(String8Lit("OPSSS"));
             button(String8Lit("OPSSSS"));
         endPanel();
-        //beginPanel(String8Lit("Test2"), {10,10}, {200,200}, CTX_HORIZONTAL_ALIGNMENT);
-        //    button(String8Lit("OPS5"));
-        //    button(String8Lit("OPS6"));
-        //endPanel();
-        //beginPanel(String8Lit("Test"), panelPos, panelSize);
-        //    slider(tmp.arena, String8Lit("radius"), &gs->radius, 1, 50);
-        //    sliderInt(tmp.arena, String8Lit("iterations"), &gs->iterations, 1, 1000);
-        //    checkBox(String8Lit("checkBox"), &t);
-        //endPanel();
-
-        //panelPos = {100,100};
-        //panelSize = {300, 100};
-        //beginPanel(String8Lit("Test 2"), panelPos, panelSize, CTX_HORIZONTAL_ALIGNMENT);
-        //    button(String8Lit("ciao"));
-        //    button(String8Lit("ciao2"));
-        //    checkBox(String8Lit("checkBox"), &t);
-        //    slider(tmp.arena, String8Lit("radius"), &gs->radius, 1, 50);
-        //endPanel();
-
-        //drawTextBox(a, {500, 100}, {100,50});
+        UiLayout l = makeLayout(LAYOUT_HORIZONTAL, {600, 200}, 5);
+        //beginPanel(String8Lit("CIAO"), {500,500}, {0,0}, &l);
+        beginPanel(String8Lit("CIAO"), {500,500}, {0,0});
+        pushLayout(&l);
+            button(String8Lit("ADSFR"));
+            button(String8Lit("ADSFR"));
+            button(String8Lit("ADSFR"));
+            button(String8Lit("ADSFR"));
+            button(String8Lit("ADSFR"));
+        popLayout();
+        endPanel();
     //for(int i = state->renderCommands.lenght-1; i >= 0; i--){
+    beginScene(NO_DEPTH);
     for(uint32_t i = 0; i < state->renderCommands.lenght; i++){
         UiRenderCommand* command = &state->renderCommands.items[i];
         switch(command->type){
             case UI_RECTANGLE:{
                 renderDrawFilledRect(command->pos, command->size, 0, command->color);
+                //renderDrawFilledRectPro(command->pos, command->size, 0, {0,1}, command->color);
                 break;
             }
             case UI_TEXT:{
@@ -551,148 +378,40 @@ void drawHud(GameState* gs, Arena* a){
 
 // --------------------------------------------
 
+enum Layer{
+    LAYER_BG = 0,
+};
 
-void systemRenderEcs(){
-    EntityArray entities = view(ECS_TYPE(SpriteComponent), ECS_TYPE(TransformComponent));
-    for(size_t i = 0; i < entities.count; i++){
-        Entity e = entities.entities[i];
-        SpriteComponent* sprite = getComponent(e, SpriteComponent);
-        TransformComponent* transform = getComponent(e, TransformComponent);
-        ASSERT((sprite && transform), "Ecs renderer failed, null component");
-        Rect rect = {{transform->position.x, transform->position.y}, sprite->size};
-        renderDrawQuadPro(transform->position, sprite->size, transform->rotation,
-                            rect, {0.5f, 0.5f}, sprite->texture, sprite->color,
-                            sprite->ySort, sprite->ySortOffset);
-    }
+
+glm::vec2 getMouseWorld(GameState* gs, float scale){
+    //mouse world calculations
+    glm::vec2 mousePos = getMousePos();
+    glm::vec2 n = getMousePos() / getScreenSize();
+    glm::vec2 quadSize = gs->gameSize * scale;
+    glm::vec2 quadPos  = (getScreenSize() * 0.5f) - (quadSize * 0.5f); // top-left of quad
+    float quadLeft = quadPos.x;
+    float quadRight = quadPos.x + quadSize.x;
+    float quadTop = quadPos.y + quadSize.y;
+    float quadBot = quadPos.y;
+    glm::vec2 botLeft = {quadBot, quadLeft};
+    glm::vec2 topRight = {quadTop, quadRight};
+    mousePos = glm::vec2(getMousePos().x - quadLeft, getMousePos().y - quadBot);
+    n = mousePos / quadSize;
+    glm::vec2 worldPos = (n * gs->gameSize) - (gs->gameSize * 0.5f);
+
+    return worldPos;
 }
 
-void systemGravity(GameState* gs, float dt){
-    static float radius = 50;
-    static float gravity = 90;
-    static float softening = 5;
-    EntityArray entities = view(ECS_TYPE(TransformComponent),    ECS_TYPE(VelocityComponent),
-                                ECS_TYPE(AccelerationComponent), ECS_TYPE(AsteroidTag),
-                                ECS_TYPE(MassComponent));
-    for(size_t i = 0; i < entities.count; i++){
-        Entity e = entities.entities[i];
-        TransformComponent* transform = getComponent(e, TransformComponent);
-        VelocityComponent* velocity = getComponent(e, VelocityComponent);
-        AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
-        MassComponent* mass = getComponent(e, MassComponent);
-        for(size_t j = i+1; j < entities.count; j++){
-            Entity e2 = entities.entities[j];
-            TransformComponent* transform2 = getComponent(e2, TransformComponent);
-            AccelerationComponent* acceleration2 = getComponent(e2, AccelerationComponent);
-            MassComponent* mass2 = getComponent(e2, MassComponent);
-            ASSERT((transform2 && transform2 && mass2), "Ecs gravity failed, null component");
-            if(glm::distance(transform->position, transform2->position) <= radius){
-                glm::vec2 diff = glm::vec2(transform2->position) - glm::vec2(transform->position);
-                float dist = glm::sqrt(glm::length(diff) + softening * softening);
-                float force = gravity * mass->v * mass2->v / (dist * dist);
-                glm::vec2 dir = glm::normalize(diff);
-                //glm::vec2 force = glm::normalize(diff);
-                //acceleration2->a -= glm::normalize(diff) * gravity * mass->v;
-                //acceleration->a  += glm::normalize(diff) * gravity * mass2->v;
-                acceleration2->a -= dir * (force / mass->v );
-                acceleration->a  += dir * (force / mass2->v);
-            }
-        }
-    }
+//int ij(GameState* gs, int i, int j){
+//    return (gs->worldGrid.size.y * j) + i;
+//}
 
+Cell* getGridCell(WorldGrid* grid, int i, int j){
+    return &grid->cell[(grid->size.x * j) + i];
 }
 
-void systemMovement(float dt){
-    EntityArray entities = view(ECS_TYPE(TransformComponent), ECS_TYPE(VelocityComponent), ECS_TYPE(AccelerationComponent));
-    for(size_t i = 0; i < entities.count; i++){
-        Entity e = entities.entities[i];
-        TransformComponent* transform = getComponent(e, TransformComponent);
-        VelocityComponent* velocity = getComponent(e, VelocityComponent);
-        AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
-        ASSERT((transform && velocity && acceleration), "Ecs movement failed, null component");
-        velocity->vel += acceleration->a * dt;
-        acceleration->a = {0, 0};
-        transform->position.x += velocity->vel.x * dt;
-        transform->position.y += velocity->vel.y * dt; 
-        //LOGINFO("%f, %f", velocity->vel.x, velocity->vel.y);
-        //velocity->vel = {0, 0};// remove the reset to have a character which doesn't have breaks
-    }
-}
-
-void systemGameInput(){
-    EntityArray entities = view(ECS_TYPE(PlayerTag));
-    for(size_t i = 0; i < entities.count; i++){
-        Entity e = entities.entities[i];
-        VelocityComponent* velocity = getComponent(e, VelocityComponent);
-        AccelerationComponent* acceleration = getComponent(e, AccelerationComponent);
-        ASSERT((velocity), "Ecs movement failed, null component");
-        //velocity->vel = {0,0};
-        acceleration->a = {0,0};
-        if(isPressed(KEYS::D)) acceleration->a.x = +1.0f;
-        if(isPressed(KEYS::A)) acceleration->a.x = -1.0f;
-        if(isPressed(KEYS::W)) acceleration->a.y = +1.0f;
-        if(isPressed(KEYS::S)) acceleration->a.y = -1.0f;
-        //LOGINFO("%f, %f", acceleration->a.x, acceleration->a.y);
-    }
-}
-
-void systemSpawnAsteroids(GameState* gs, float dt){
-    //TODO: change rand with a better random function
-    static float rate;
-    float rateSpawn = 1.0f;
-    if(rate >= rateSpawn){
-        glm::vec2 spawnRange = gs->gameSize;
-        int baseSize = 10;
-        int maxSize = 20;
-        float baseSpeed = 10.0f;
-        float size = (rand() % maxSize) + baseSize;
-        Entity e = createEntity();
-        TransformComponent transform = {};
-        glm::vec3 spawnPos = {((((float)rand() / RAND_MAX) - 0.5f) * spawnRange.x), ((((float)rand() / RAND_MAX) - 0.5f) * spawnRange.y), 0.0f};
-        glm::vec3 playerPos = getComponent(gs->player, TransformComponent)->position;
-        glm::vec2 dir = playerPos - spawnPos;
-        transform.position = spawnPos;
-        pushComponent(e, TransformComponent, &transform);
-        SpriteComponent sprite = {};
-        sprite.color = {1.0f,1.0f,1.0f,1};
-        sprite.layer = 1;
-        sprite.size = {size, size};
-        sprite.texture = &gs->gameTextures[PLAYER_TEXTURE];
-        sprite.visible = true;
-        sprite.ySort = true;
-        sprite.ySortOffset = 0;
-        pushComponent(e, SpriteComponent, &sprite);
-        VelocityComponent velocity = {};
-        velocity.vel = glm::normalize(dir) * baseSpeed;
-        pushComponent(e, VelocityComponent, &velocity);
-        AccelerationComponent acceleration = {};
-        //acceleration.a = glm::normalize(dir) * baseSpeed;
-        acceleration.a = {10,10};
-        pushComponent(e, AccelerationComponent, &acceleration);
-        MassComponent mass = {};
-        mass.v = size;
-        //mass.v = 1;
-        pushComponent(e, MassComponent, &mass);
-        AsteroidTag asteroidTag = {};
-        pushComponent(e, AsteroidTag, &asteroidTag);
-        rate = 0;
-    }
-    rate += dt;
-}
-
-void systemDestroyAsteroids(GameState* gs){
-    EntityArray entities = view(ECS_TYPE(TransformComponent), ECS_TYPE(AsteroidTag));
-    for(size_t i = 0; i < entities.count; i++){
-        Entity e = entities.entities[i];
-        TransformComponent* transform = getComponent(e, TransformComponent);
-        ASSERT((transform), "Ecs movement failed, null component");
-        if( transform->position.x >=  gs->mainCamera.width  * 2  || 
-            transform->position.x <= -gs->mainCamera.width  * 2  ||
-            transform->position.y <= -gs->mainCamera.height * 2  ||
-            transform->position.y >=  gs->mainCamera.height * 2){
-                removeEntity(e);
-            }
-    }
-
+glm::vec2 gridPosToWorld(WorldGrid* grid, int i, int j){
+        return glm::vec2(i * grid->cellSize, j * grid->cellSize) - (glm::vec2(grid->size) * grid->cellSize * 0.5f);
 }
 
 GAME_API void gameStart(Arena* gameArena){
@@ -704,88 +423,91 @@ GAME_API void gameStart(Arena* gameArena){
     gs->restart = false;
     gs->gameSize = {640, 320};
     gs->mainCamera = createCamera(-gs->gameSize.x / 2, gs->gameSize.x / 2, -gs->gameSize.y / 2, gs->gameSize.y/ 2);
-    setActiveCamera(&gs->mainCamera);
 
     srand(1);
 
     //---------------------------------------
     //trick to hot reload and prototype faster
     //TODO: remove
-    gs->uiState = initUi(gameArena);
+    //gs->uiState = initUi(gameArena);
     //---------------------------------------
     gs->f = loadFont("Roboto-Regular", 24);
-    gs->texture = loadTexture("awesome");
-    gs->finalTexture = loadRenderTexture(640, 320);
+    gs->finalTexture = loadRenderTexture(gs->gameSize.x, gs->gameSize.y);
+    setTextureWrap(&gs->finalTexture.texture, TEXTURE_WRAP_CLAMP_TO_EDGE, TEXTURE_WRAP_CLAMP_TO_EDGE);
+
+    //Grid world
+    gs->worldGrid = {};
+    glm::vec2 gridSize = {25, 15};
+    gs->worldGrid.size = gridSize;
+    gs->worldGrid.cell = arenaAllocArray(gs->arena, Cell, gridSize.x * gridSize.y);
+    gs->worldGrid.cellSize = 20;
+    for(int j = 0; j < gs->worldGrid.size.y; j++){
+        for(int i = 0; i < gs->worldGrid.size.x; i++){
+            //TODO initialize cells
+            Cell* c = getGridCell(&gs->worldGrid, i, j);
+            c->walkable = true;
+        }
+    }
+
+    // Units
+    gs->units = arenaAllocArray(gs->arena, Unit, 1);
+    gs->units->type = UNIT_PLAYER;
+    gs->units->pos = {0,0};
 
     gs->gameTextures[PLAYER_TEXTURE] = loadWhiteTexture();
-
-    importCustomComponentModule();
-
-    //player creation
-    Entity e = createEntity();
-    gs->player = e;
-    TransformComponent transform;
-    transform.position = {0,0,0};
-    transform.rotation = {0,0,0};
-    transform.scale    = {1,1,1};
-    pushComponent(e, TransformComponent, &transform);
-    SpriteComponent sprite;
-    sprite.color = {1,1,1,1};
-    sprite.layer = 1;
-    sprite.size = {10, 10};
-    sprite.texture = &gs->gameTextures[PLAYER_TEXTURE];
-    sprite.visible = true;
-    sprite.ySort = true;
-    sprite.ySortOffset = 0;
-    pushComponent(e, SpriteComponent, &sprite);
-    VelocityComponent velocity;
-    velocity.vel = {0.0f, 0.0f};
-    pushComponent(e, VelocityComponent, &velocity);
-    AccelerationComponent acceleration = {};
-    acceleration.a = {0.0f, 0.0f};
-    pushComponent(e, AccelerationComponent, &acceleration);
-    PlayerTag playerTag;
-    pushComponent(e, PlayerTag, &playerTag);
 }
 
 GAME_API void gameRender(Arena* gameArena, float dt){}
+
 
 GAME_API void gameUpdate(Arena* gameArena, float dt){
     GameState* gs = (GameState*)gameArena->memory;
     //---------------------------------------
     //trick to hot reload and prototype faster
     //TODO: remove
-    state = gs->uiState;
+    //state = gs->uiState;
     //---------------------------------------
 
-    //reimport modules for dll reload
-    importCustomComponentModule();
+    float scale = 2.0f;
+    glm::vec2 mouseWorld = getMouseWorld(gs, scale);
 
-    systemSpawnAsteroids(gs, dt);
-
-    //sytems updates
-    systemGameInput();
-    systemGravity(gs, dt);
-    systemMovement(dt);
-    systemDestroyAsteroids(gs);
-    //----------------
-
+    glm::vec4 bgColor       = {0.2, 0.5, 0.2, 1.0f};
+    glm::vec4 borderColor   = {1.0, 0.0, 0.0, 1.0f};
     //render the game into the texture world
+    glm::ivec2 gridSize = gs->worldGrid.size;
+    float cellSize = gs->worldGrid.cellSize;
+    beginScene(NO_DEPTH);
+    clearColor(0.0f,0.0f,0.0f,1);
     beginTextureMode(&gs->finalTexture);
         beginMode2D(gs->mainCamera);
-            clearColor(0.5f,0.5f,0.5f,1);
-            systemRenderEcs();
+            renderDrawFilledRect(-(gs->gameSize / 2.0f), gs->gameSize, 0, {0,0,0.5,1}, LAYER_BG);
+            //draw grid
+            for(int j = 0; j < gridSize.y; j++){
+                for(int i = 0; i < gridSize.x; i++){
+                    glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i , j);
+                    renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, bgColor, LAYER_BG);
+                    renderDrawRect(cellPos, glm::vec2(cellSize), borderColor, LAYER_BG);
+                }
+            }
+            Unit* player = &gs->units[0];
+            glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->pos.x , player->pos.y);
+            renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, {1,1,1,1}, LAYER_BG);
         endMode2D();
     endTextureMode();
+    endScene();
 
     //World drawing on texture to never lose the initial resolution
+    glm::vec2 quadSize = gs->gameSize * scale;
+    glm::vec2 quadPos  = (getScreenSize() * 0.5f) - (quadSize * 0.5f); // top-left of quad
     Rect rect;
     rect.pos = {0,0};
-    rect.size = {640, 320};
+    rect.size = gs->gameSize;
+    glm::vec2 size = glm::vec2(rect.size.x, rect.size.y) * scale;
+    glm::vec2 pos = quadPos + glm::vec2(0, quadSize.y); // shift down by height to compensate for flip
     beginScene();
         clearColor(0, 0, 0, 1);
-        renderDrawQuadPro2D(getScreenSize() * 0.5f, {rect.size.x, -rect.size.y},
-                            0, rect, {0.5f,0.5f}, &gs->finalTexture.texture);
+        renderDrawQuadPro2D(pos, {size.x, -size.y},
+                            0, rect, {0.0f,0.0f}, &gs->finalTexture.texture);
     endScene();
 
     //Ui Code -------------------------------------
