@@ -3,13 +3,14 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-OrtographicCamera* activeCamera;
+//OrtographicCamera* activeCamera;
 
 OrtographicCamera createCamera(float left, float right, float bottom, float top){
     OrtographicCamera camera = {};
     camera.position = glm::vec3(0.0f, 0.0f, 0.0f);
     camera.width = right - left;
     camera.height = top - bottom;
+    //camera.aspectRatio = camera.width / camera.height;
 
     camera.projection = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
     camera.view = glm::translate(glm::mat4(1.0f), -camera.position);
@@ -80,7 +81,7 @@ glm::vec2 convertScreenCoords(glm::vec2 pos, glm::vec2 size, glm::vec2 screenSiz
 
 glm::vec2 screenToWorld(const OrtographicCamera& camera, const glm::vec2& screenSize, const glm::vec2& screenPos){
     // Convert from top-left origin to bottom-left origin
-    glm::vec2 flipped = {screenPos.x, screenSize.y - screenPos.y};
+    glm::vec2 flipped = {screenPos.x, screenPos.y};
 
     // Normalize to [0, 1]
     glm::vec2 normalized = flipped / screenSize;
@@ -94,10 +95,10 @@ glm::vec2 screenToWorld(const OrtographicCamera& camera, const glm::vec2& screen
     return worldPos;
 }
 
-void setActiveCamera(OrtographicCamera* camera){
-    activeCamera = camera;
-}
-
-OrtographicCamera* getActiveCamera(){
-    return activeCamera;
-}
+//void setActiveCamera(OrtographicCamera* camera){
+//    activeCamera = camera;
+//}
+//
+//OrtographicCamera* getActiveCamera(){
+//    return activeCamera;
+//}
