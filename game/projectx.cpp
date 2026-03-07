@@ -411,7 +411,8 @@ Cell* getGridCell(WorldGrid* grid, int i, int j){
 }
 
 glm::vec2 gridPosToWorld(WorldGrid* grid, int i, int j){
-        return glm::vec2(i * grid->cellSize, j * grid->cellSize) - (glm::vec2(grid->size) * grid->cellSize * 0.5f);
+    glm::vec2 center = glm::vec2(i + 0.5f , j + 0.5f);
+    return glm::vec2(center.x * grid->cellSize, center.y * grid->cellSize) - (glm::vec2(grid->size) * grid->cellSize * 0.5f);
 }
 
 GAME_API void gameStart(Arena* gameArena){
@@ -437,10 +438,10 @@ GAME_API void gameStart(Arena* gameArena){
 
     //Grid world
     gs->worldGrid = {};
-    glm::vec2 gridSize = {25, 15};
+    glm::vec2 gridSize = {24, 14};
     gs->worldGrid.size = gridSize;
     gs->worldGrid.cell = arenaAllocArray(gs->arena, Cell, gridSize.x * gridSize.y);
-    gs->worldGrid.cellSize = 20;
+    gs->worldGrid.cellSize = 16;
     for(int j = 0; j < gs->worldGrid.size.y; j++){
         for(int i = 0; i < gs->worldGrid.size.x; i++){
             //TODO initialize cells
@@ -468,8 +469,15 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     //state = gs->uiState;
     //---------------------------------------
 
+    TempArena temp = getTempArena(gs->arena);
     float scale = 2.0f;
     glm::vec2 mouseWorld = getMouseWorld(gs, scale);
+    glm::ivec2 mouseGrid = glm::floor(mouseWorld / gs->worldGrid.cellSize);
+    mouseGrid = mouseGrid + glm::ivec2(glm::round(glm::vec2(gs->worldGrid.size) * 0.5f));
+    LOGINFO("%f, %f", mouseWorld.x, mouseWorld.y);
+    LOGINFO("%d, %d", mouseGrid.x, mouseGrid.y);
+    String8 indexT = pushString8F(temp.arena, "%d, %d", mouseGrid.x, mouseGrid.y);
+    String8 mouseWorldT = pushString8F(temp.arena, "%f, %f", mouseWorld.x, mouseWorld.y);
 
     glm::vec4 bgColor       = {0.2, 0.5, 0.2, 1.0f};
     glm::vec4 borderColor   = {1.0, 0.0, 0.0, 1.0f};
@@ -486,15 +494,27 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                 for(int i = 0; i < gridSize.x; i++){
                     glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i , j);
                     renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, bgColor, LAYER_BG);
+                    renderDrawFilledRect(cellPos, glm::vec2(10), 0, {1,0,0,1}, LAYER_BG);
+                    //renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0,1}, bgColor, LAYER_BG);
+                    //renderDrawFilledRectPro(cellPos, glm::vec2(10), 0, {0,1}, {1,0,0,1}, LAYER_BG);
                     renderDrawRect(cellPos, glm::vec2(cellSize), borderColor, LAYER_BG);
                 }
             }
             Unit* player = &gs->units[0];
             glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->pos.x , player->pos.y);
             renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, {1,1,1,1}, LAYER_BG);
+
+            //debug center lines
+            glm::vec2 p0x = glm::vec2(-gs->gameSize.x, 0);// gs->gameSize.y * 0.5f);
+            glm::vec2 p1x = glm::vec2(gs->gameSize.x, 0);
+            renderDrawLine(p0x, p1x, {1,1,1,1});
+            glm::vec2 p0y = glm::vec2(0, -gs->gameSize.y);// gs->gameSize.y * 0.5f);
+            glm::vec2 p1y = glm::vec2(0, gs->gameSize.y);
+            renderDrawLine(p0y, p1y, {1,1,1,1});
         endMode2D();
     endTextureMode();
     endScene();
+    
 
     //World drawing on texture to never lose the initial resolution
     glm::vec2 quadSize = gs->gameSize * scale;
@@ -506,9 +526,12 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     glm::vec2 pos = quadPos + glm::vec2(0, quadSize.y); // shift down by height to compensate for flip
     beginScene();
         clearColor(0, 0, 0, 1);
+        renderDrawText2D(&gs->f, indexT.str ,{10,20}, 1);
+        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,30}, 1);
         renderDrawQuadPro2D(pos, {size.x, -size.y},
                             0, rect, {0.0f,0.0f}, &gs->finalTexture.texture);
     endScene();
+    releaseTempArena(temp);
 
     //Ui Code -------------------------------------
     //drawHud(gs, gameArena);
