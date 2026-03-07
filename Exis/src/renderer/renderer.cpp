@@ -795,13 +795,22 @@ void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float 
 void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const glm::vec4 color, const float layer){
     const size_t vertSize = 6;
 
+//    glm::vec4 vertexPosition[] = {
+//        {-0.5f,  0.5f, 0.0f, 1.0f}, //top left
+//        { 0.5f, -0.5f, 0.0f, 1.0f}, //bot right
+//        {-0.5f, -0.5f, 0.0f, 1.0f}, //bot left
+//        {-0.5f,  0.5f, 0.0f, 1.0f}, //top left
+//        { 0.5f,  0.5f, 0.0f, 1.0f}, //top right
+//        { 0.5f, -0.5f, 0.0f, 1.0f}  //bot right
+//                                };
+
     glm::vec4 vertexPosition[] = {
-                                    {-origin.x,        1.0f - origin.y, 0.0f, 1.0f},
-                                    {1.0f - origin.x, -origin.y,        0.0f, 1.0f},
-                                    {-origin.x,       -origin.y,        0.0f, 1.0f},
-                                    {-origin.x,        1.0f - origin.y, 0.0f, 1.0f},
-                                    {1.0f - origin.x,  1.0f - origin.y, 0.0f, 1.0f},
-                                    {1.0f - origin.x, -origin.y,        0.0f, 1.0f}
+        {0.0f, 1.0f, 0.0f, 1.0f}, //top left
+        {1.0f, 0.0f, 0.0f, 1.0f}, //bot right
+        {0.0f, 0.0f, 0.0f, 1.0f}, //bot left
+        {0.0f, 1.0f, 0.0f, 1.0f}, //top left
+        {1.0f, 1.0f, 0.0f, 1.0f}, //top right
+        {1.0f, 0.0f, 0.0f, 1.0f}  //bot right
                                 };
 
     // UV coordinates for each vertex (0,0 at top-left, 1,1 at bottom-right)
@@ -818,16 +827,16 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
 
     model = glm::translate(model, glm::vec3(position, layer));
 
-    glm::vec3 modelCenter(0.5f * size.x, 0.5f * size.y, 0.0f);
-    model = glm::translate(model, modelCenter);
-    model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
-    model = glm::translate(model, -modelCenter);
+    //glm::vec3 modelCenter(0.5f * size.x, 0.5f * size.y, 0.0f);
+    //model = glm::translate(model, modelCenter);
+    //model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
+    //model = glm::translate(model, -modelCenter);
 
     model = glm::scale(model, glm::vec3(size.x, size.y, 1.0f));
 
     for(size_t i = 0; i < vertSize; i++){
         Vertex v = {};
-        v.pos = model * vertexPosition[i];
+        v.pos = model * (vertexPosition[i] - glm::vec4(origin, 0, 0));
         v.texCoord = uvCoords[i];  // Provide UV coordinates for custom shaders
         v.color = color;
         v.texIndex = 0;
