@@ -571,7 +571,9 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                 }else if(unit->type == UNIT_ENEMY){
                     unitColor = enemyColor;
                 }
-                renderDrawFilledRect(unitPos, glm::vec2(cellSize), 0, unitColor, LAYER_BG);
+                static float accDt;
+                accDt += dt;
+                renderDrawFilledRect(unitPos, glm::vec2(cellSize), 360 * (glm::sin((dt)) + 1.0f) * 0.5f, unitColor, LAYER_BG);
             }
 
             //debug center lines
