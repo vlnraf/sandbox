@@ -469,6 +469,9 @@ GAME_API void gameStart(Arena* gameArena){
         glm::vec2 pos = glm::vec2(rand() % gridSize.x, rand() % gridSize.y);
         gs->units[i].pos = pos;
         gs->units[i].movement = 2;
+
+        Cell* cell = getGridCell(&gs->worldGrid, pos.x, pos.y);
+        cell->walkable = false;
     }
     gs->units[0].type = UNIT_PLAYER;
     gs->units[0].pos = {0,0};
@@ -527,7 +530,6 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->pos.x , player->pos.y);
             static bool dragging;
             static glm::ivec2 initialPos;
-            static glm::ivec2 finalPos;
             //LOGINFO("%d", (mouseGrid == player->pos));
             //LOGINFO("%d", isMouseButtonJustPressed(MOUSE_BUTTON_LEFT));
             if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->pos)){
@@ -536,16 +538,25 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)
                 && mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement 
                 && mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
-                dragging = false;
-                //finalPos = mouseGrid;
-                initialPos = player->pos;
-                player->pos = mouseGrid;
+
+                Cell* c = getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y);
+                if(c->walkable){
+                    player->pos = mouseGrid;
+                    dragging = false;
+                    initialPos = player->pos;
+                }
             }
             if(dragging){
                 for(int j = initialPos.y - player->movement; j <= initialPos.y + player->movement; j++){
                     for(int i = initialPos.x - player->movement; i <= initialPos.x + player->movement; i++){
-                        glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i, j);
-                        renderDrawRect(cellPos, glm::vec2(gs->worldGrid.cellSize), {0.8f, 0.4f, 0.0f, 1.0f});
+                        if(i >= 0 && i < gs->worldGrid.size.x &&
+                           j >= 0 && j < gs->worldGrid.size.y){
+                                glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i, j);
+                                Cell* c = getGridCell(&gs->worldGrid, i , j);
+                                if(c->walkable){
+                                    renderDrawRect(cellPos, glm::vec2(gs->worldGrid.cellSize), {0.8f, 0.4f, 0.0f, 1.0f});
+                                }
+                        }
                     }
                 }
             }
@@ -577,17 +588,19 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
 
     //World drawing on texture to never lose the initial resolution
     glm::vec2 quadSize = gs->gameSize * scale;
-    glm::vec2 quadPos  = (getScreenSize() * 0.5f) - (quadSize * 0.5f); // top-left of quad
+    //glm::vec2 quadPos  = (getScreenSize() * 0.5f) - (quadSize * 0.5f); // top-left of quad
+    //glm::vec2 quadPos  = glm::vec2((getScreenSize().x * 0.5f) - (quadSize.x * 0.5f), -quadSize.y * 0.5f); // top-left of quad
+    glm::vec2 quadPos  = glm::vec2(0, 0); // top-left of quad
     Rect rect;
     rect.pos = {0,0};
     rect.size = gs->gameSize;
     glm::vec2 size = glm::vec2(rect.size.x, rect.size.y) * scale;
-    glm::vec2 pos = quadPos + glm::vec2(0, quadSize.y); // shift down by height to compensate for flip
+    glm::vec2 pos = (getScreenSize() * 0.5f) - (quadSize * 0.5f);// quadPos + glm::vec2(0, quadSize.y); // shift down by height to compensate for flip
     beginScene();
         clearColor(0, 0, 0, 1);
         renderDrawText2D(&gs->f, indexT.str ,{10,20}, 1);
         renderDrawText2D(&gs->f, mouseWorldT.str ,{10,50}, 1);
-        renderDrawQuadPro2D(pos, {size.x, -size.y},
+        renderDrawQuadPro2D(pos, {size.x, size.y},
                             0, rect, {0.0f,0.0f}, &gs->finalTexture.texture);
     endScene();
     releaseTempArena(temp);
