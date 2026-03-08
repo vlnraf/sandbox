@@ -829,7 +829,7 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
 
     //glm::vec3 modelCenter(0.5f * size.x, 0.5f * size.y, 0.0f);
     //model = glm::translate(model, modelCenter);
-    //model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
+    model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
     //model = glm::translate(model, -modelCenter);
 
     model = glm::scale(model, glm::vec3(size.x, size.y, 1.0f));
