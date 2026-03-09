@@ -12,10 +12,7 @@ Tile createTile(const uint32_t y, const uint32_t x, const float tileWidth, const
     tile.index = glm::vec2(x, y);
     tile.width = tileWidth;
     tile.height = tileHeight;
-    tile.sourceRect = {
-        .pos = {x * tileWidth, y * tileHeight},
-        .size = {tileWidth, tileHeight}
-    };
+    tile.sourceRect = {x * tileWidth, y * tileHeight, tileWidth, tileHeight};
 
     // Calculate normalized UV coordinates (legacy support)
     float normTileWidth = tileWidth / textureWidth;

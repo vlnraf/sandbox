@@ -26,7 +26,7 @@
 struct Vertex{
     glm::vec4 pos;        // location = 0
     glm::vec2 texCoord;   // location = 1 (set to 0,0 if unused)
-    glm::vec4 color;      // location = 2
+    Color color;          // location = 2
     uint8_t texIndex;     // location = 3 (set to 0 if unused)
 };
 
@@ -159,21 +159,21 @@ CORE_API void enableBlending();
 
 // 3D Quad Drawing
 // Note: position.z is the base layer, ySort dynamically adjusts it based on Y position for depth sorting
-CORE_API void renderDrawQuad(glm::vec3 position, const glm::vec2 size, float rotation, const Texture* texture, glm::vec4 color, bool ySort = false); // Simple: whole texture with tint
-CORE_API void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Texture* texture, const Rect sourceRect, glm::vec4 color, bool ySort = false); // Extended: atlas region + color tint
-CORE_API void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, glm::vec4 color, bool ySort, float ySortOffset = 0.0f); // Pro: full control with origin and y-sort offset
-CORE_API void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, glm::vec4 color = {1,1,1,1}, const float layer = 1.0f);
+CORE_API void renderDrawQuad(glm::vec3 position, const glm::vec2 size, float rotation, const Texture* texture, Color color, bool ySort = false); // Simple: whole texture with tint
+CORE_API void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Texture* texture, const Rect sourceRect, Color color, bool ySort = false); // Extended: atlas region + color tint
+CORE_API void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, Color color, bool ySort, float ySortOffset = 0.0f); // Pro: full control with origin and y-sort offset
+CORE_API void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, Color color, const float layer = 1.0f);
 
 // 2D/UI Drawing - Primitives
-CORE_API void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const glm::vec4 color, const float layer = 0.0f);
-CORE_API void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const glm::vec4 color, const float layer = 0.0f);
-CORE_API void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec4 color, const float layer = 0.0f);
-CORE_API void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const glm::vec4 color, const float layer = 0.0f);
-CORE_API void renderDrawQuad2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, glm::vec4 color = {1,1,1,1}); // Simple: whole texture with tint
-CORE_API void renderDrawQuadEx2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, const Rect sourceRect, glm::vec4 color = {1,1,1,1}); // Extended: atlas region + color tint
-CORE_API void renderDrawQuadPro2D(glm::vec2 position, const glm::vec2 size, float rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, glm::vec4 color = {1,1,1,1}); // Pro: full control with origin
-CORE_API void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, glm::vec4 color = {1,1,1,1}, const float layer = 1.0f);
-CORE_API void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm::vec2 origin, const glm::vec4 color, const float layer);
+CORE_API void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float rotation, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawQuad2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, Color color); // Simple: whole texture with tint
+CORE_API void renderDrawQuadEx2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, const Rect sourceRect, Color color); // Extended: atlas region + color tint
+CORE_API void renderDrawQuadPro2D(glm::vec2 position, const glm::vec2 size, float rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, Color color); // Pro: full control with origin
+CORE_API void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, Color color, const float layer = 1.0f);
+CORE_API void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm::vec2 origin, const Color color, const float layer);
 
 // UI Anchor helpers (for bottom-left origin coordinate system)
 CORE_API glm::vec2 anchorTopLeft(float x, float y);

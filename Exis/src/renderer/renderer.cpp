@@ -355,10 +355,10 @@ glm::vec4 calculateSpriteUV(const Texture* texture, Rect sourceRect){
     float uOffset = epsilon / (float) texture->width;
     float vOffset = epsilon / (float) texture->height;
 
-    float tileLeft =    sourceRect.pos.x / texture->width;// + uOffset;
-    float tileRight =   (sourceRect.pos.x + sourceRect.size.x) / texture->width;// - uOffset;
-    float tileBottom =  sourceRect.pos.y / texture->height;// + vOffset;
-    float tileTop =     (sourceRect.pos.y + sourceRect.size.y) / texture->height;// - vOffset;
+    float tileLeft =    sourceRect.x / texture->width;// + uOffset;
+    float tileRight =   (sourceRect.x + sourceRect.w) / texture->width;// - uOffset;
+    float tileBottom =  sourceRect.y / texture->height;// + vOffset;
+    float tileTop =     (sourceRect.y + sourceRect.h) / texture->height;// - vOffset;
 
     return glm::vec4(tileTop, tileLeft, tileBottom, tileRight);
 }
@@ -555,7 +555,7 @@ void renderFlush(){
 
 //TODO: used in tilemap renderer, but it's deprecated
 void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture,
-                    glm::vec4 color, bool ySort, float ySortOffset){
+                    Color color, bool ySort, float ySortOffset){
 
     OrtographicCamera cam = renderer->activeCamera;
     uint8_t textureIndex = 0;
@@ -653,43 +653,40 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
 }
 
 // Simple variant: draw whole texture with color tint and single float rotation
-void renderDrawQuad(glm::vec3 position, const glm::vec2 size, float rotation, const Texture* texture, glm::vec4 color, bool ySort){
-    Rect sourceRect = {.pos = {0,0}, .size = {(float)texture->width, (float)texture->height}};
+void renderDrawQuad(glm::vec3 position, const glm::vec2 size, float rotation, const Texture* texture, Color color, bool ySort){
+    Rect sourceRect = {0, 0, (float)texture->width, (float)texture->height};
     renderDrawQuadPro(position, size, {0, 0, rotation}, sourceRect, {0,0}, texture, color, ySort);
 }
 
 // Extended variant: atlas region with color tint and optional ySort
-void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Texture* texture, const Rect sourceRect, glm::vec4 color, bool ySort){
+void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Texture* texture, const Rect sourceRect, Color color, bool ySort){
     renderDrawQuadPro(position, size, rotation, sourceRect, {0,0}, texture, color, ySort);
 }
 
-void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const glm::vec4 color, const float layer){
+void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const Color color, const float layer){
     //float normLayer = layer + (1.0f - (1.0f / camera.height));
     if(renderer->lineVertexCount >= MAX_VERTICES_LINES){
         renderFlush();
         renderStartBatch();
     }
 
-    glm::vec4 verterxColor[] = { {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
     glm::vec4 vertexPosition[] = {{p0.x, p0.y, layer, 1.0f},
                                   {p1.x, p1.y, layer, 1.0f}};
 
     const size_t vertSize = 2;
 
-    Vertex vertices[vertSize];
     for(size_t i = 0; i < vertSize; i++){
         Vertex v = {};
         v.pos = vertexPosition[i];
-        v.texCoord = {0.0f, 0.0f};  // Unused for lines
-        v.color = verterxColor[i] * color;
-        v.texIndex = 0;  // Unused for lines
-        vertices[i] = v;
+        v.texCoord = {0.0f, 0.0f};
+        v.color = color;
+        v.texIndex = 0;
         renderer->lineVertices[renderer->lineVertexCount] = v;
         renderer->lineVertexCount += 1;
     }
 }
 
-void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const glm::vec4 color, const float layer){
+void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const Color color, const float layer){
     glm::vec2 p0 = {offset.x , offset.y};
     glm::vec2 p1 = {offset.x + size.x, offset.y};
     glm::vec2 p2 = {offset.x + size.x, offset.y + size.y};
@@ -702,7 +699,7 @@ void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const glm::vec
 }
 
 //World text rendering (to be refactored)
-void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, glm::vec4 color, float layer){
+void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, Color color, float layer){
     if(renderer->quadVertexCount >= MAX_VERTICES){
         renderFlush();
         renderStartBatch();
@@ -747,10 +744,7 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
         float h = ch.Size.y * scale;
 
         // Create Rect for character atlas region (pixel coordinates)
-        Rect charRect = {
-            .pos = {(float)ch.xOffset, 0.0f},
-            .size = {(float)ch.Size.x, (float)ch.Size.y}
-        };
+        Rect charRect = {(float)ch.xOffset, 0.0f, (float)ch.Size.x, (float)ch.Size.y};
         glm::vec4 uv = calculateSpriteUV(texture, charRect);
         // update VBO for each character
         size_t vertSize = 6;
@@ -788,11 +782,11 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
 
 
 //------------------------------------------------------ UI methods ------------------------------------------------------
-void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec4 color, const float layer){
+void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float rotation, const Color color, const float layer){
     renderDrawFilledRectPro(position, size, rotation, {0,0}, color, layer);
 }
 
-void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const glm::vec4 color, const float layer){
+void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const Color color, const float layer){
     const size_t vertSize = 6;
 
 //    glm::vec4 vertexPosition[] = {
@@ -844,27 +838,27 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
     }
 }
 
-void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, glm::vec4 color, float layer){
+void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, Color color, float layer){
     renderDrawText3D(font, text, {pos, 0.0f}, scale, color, layer);
 }
 
 // Simple variant: draw whole texture with color tint
-void renderDrawQuad2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, glm::vec4 color){
-    Rect sourceRect = {.pos = {0,0}, .size = {(float)texture->width, (float)texture->height}};
+void renderDrawQuad2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, Color color){
+    Rect sourceRect = {0, 0, (float)texture->width, (float)texture->height};
     renderDrawQuadPro({position, 0}, size, {0, 0, rotation}, sourceRect, {0,0}, texture, color, false);
 }
 
 // Extended variant: atlas region with color tint
-void renderDrawQuadEx2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, const Rect sourceRect, glm::vec4 color){
+void renderDrawQuadEx2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, const Rect sourceRect, Color color){
     renderDrawQuadPro({position, 0}, size, {0, 0, rotation}, sourceRect, {0,0}, texture, color, false);
 }
 
 // Pro variant: full control with origin
-void renderDrawQuadPro2D(glm::vec2 position, const glm::vec2 size, float rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, glm::vec4 color){
+void renderDrawQuadPro2D(glm::vec2 position, const glm::vec2 size, float rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, Color color){
     renderDrawQuadPro({position, 0}, size, {0, 0, rotation}, sourceRect, origin, texture, color, false);
 }
 
-void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm::vec2 origin, const glm::vec4 color, const float layer){
+void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm::vec2 origin, const Color color, const float layer){
     const size_t vertSize = 6;
 
     glm::vec4 vertexPosition[] = {

@@ -88,7 +88,7 @@ bool UiButton(String8 text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation){
 
     glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + size.y)};
 
-    glm::vec4 color =  {0.0f, 0.0f, 0.0f, 0.5f};
+    Color color = ColorFromRGBA(0, 0, 0, 128);
 
 
     if(pointRectIntersection(mousePos, screenPos, size)){
@@ -101,12 +101,12 @@ bool UiButton(String8 text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation){
             }
             uiState->active = 0;
         }
-        color =  {1.0f, 0.0f, 0.0f, 0.5f};
+        color = ColorFromRGBA(255, 0, 0, 128);
     }else if(uiState->hot == buttonId){
         if(isMouseButtonJustPressed(MOUSE_BUTTON_1)){
             uiState->active = buttonId;
         }
-        color =  {1.0f, 1.0f, 0.0f, 0.5f};
+        color = ColorFromRGBA(255, 255, 0, 128);
     }
 
     //uint32_t textWidth = calculateTextWidth(uiState->font, text, 0.3f);
@@ -140,7 +140,7 @@ void UiText(String8 text, glm::vec2 pos, float scale){
     //float baselineY = uiState->canvasSize.y - (pos.y + uiState->font->ascender * scale);
     //glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + uiState->font->maxHeight * 0.5 * scale)};// + (uiState->font->characters->Size.y * scale))};
     //glm::vec2 screenPos = {pos.x, baselineY};
-    renderDrawText2D(uiState->font, text.str, pos, scale);
+    renderDrawText2D(uiState->font, text.str, pos, scale, COLOR_WHITE);
 }
 
 //void UiImage(Texture* texture, glm::vec2 pos, glm::vec2 rotation){
@@ -171,7 +171,7 @@ void UiText(const char* text, glm::vec2 pos, float scale){
     //float baselineY = uiState->canvasSize.y - (pos.y + uiState->font->ascender * scale);
     //glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + uiState->font->maxHeight * 0.5 * scale)};// + (uiState->font->characters->Size.y * scale))};
     //glm::vec2 screenPos = {pos.x, baselineY};
-    renderDrawText2D(uiState->font, text, pos, scale);
+    renderDrawText2D(uiState->font, text, pos, scale, COLOR_WHITE);
 }
 //Deprecated
 bool UiButton(const char* text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation){
@@ -184,7 +184,7 @@ bool UiButton(const char* text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotatio
 
     //glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + size.y)};
 
-    glm::vec4 color =  {0.0f, 0.0f, 0.0f, 0.5f};
+    Color color = ColorFromRGBA(0, 0, 0, 128);
 
 
     if(pointRectIntersection(mousePos, pos, size)){
@@ -197,12 +197,12 @@ bool UiButton(const char* text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotatio
             }
             uiState->active = 0;
         }
-        color =  {1.0f, 0.0f, 0.0f, 0.5f};
+        color = ColorFromRGBA(255, 0, 0, 128);
     }else if(uiState->hot == buttonId){
         if(isMouseButtonJustPressed(MOUSE_BUTTON_1)){
             uiState->active = buttonId;
         }
-        color =  {1.0f, 1.0f, 0.0f, 0.5f};
+        color = ColorFromRGBA(255, 255, 0, 128);
     }
 
     //uint32_t textWidth = calculateTextWidth(uiState->font, text, 0.3f);

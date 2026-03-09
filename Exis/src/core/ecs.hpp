@@ -135,12 +135,12 @@ struct SpriteComponent{
     //std::string textureName;
 
     // Pixel-based texture coordinates (for atlas sampling)
-    Rect sourceRect = {.pos = {0, 0}, .size = {0, 0}};
+    Rect sourceRect = {0, 0, 0, 0};
 
     // Physical size for rendering (scale)
     glm::vec2 size = {0, 0};
 
-    glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+    Color color = COLOR_WHITE;
 
     bool flipX = false;
     bool flipY = false;

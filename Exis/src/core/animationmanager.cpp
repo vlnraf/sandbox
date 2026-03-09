@@ -21,10 +21,7 @@ void registryAnimation(const char* id, const uint16_t frames, const uint16_t row
 
 // Helper function to convert grid index to pixel Rect
 Rect gridToPixelRect(glm::vec2 gridIndex, glm::vec2 tileSize){
-    return Rect{
-        .pos = {gridIndex.x * tileSize.x, gridIndex.y * tileSize.y},
-        .size = tileSize
-    };
+    return Rect{gridIndex.x * tileSize.x, gridIndex.y * tileSize.y, tileSize.x, tileSize.y};
 }
 
 Animation* getAnimation(const char* id){

@@ -19,10 +19,10 @@ ECS_DECLARE_COMPONENT_EXTERN(Box2DCollider)
 #define MAX_CELL_ENTITIES 100
 #define MAX_EVENTS (MAX_ENTITIES * 2)
 
-#define ACTIVE_COLLIDER_COLOR glm::vec4(255.0f / 255.0f, 0, 255.0f / 255.0f, 255.0f  /255.0f)
-#define DEACTIVE_COLLIDER_COLOR glm::vec4(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 255.0f / 255.0f)
-#define HIT_COLLIDER_COLOR glm::vec4(0 , 255.0f / 255.0f, 0, 255.0f  /255.0f)
-#define HURT_COLLIDER_COLOR glm::vec4(255.0f / 255.0f, 0, 0, 255.0f / 255.0f)
+#define ACTIVE_COLLIDER_COLOR   ColorFromRGBA(255,   0, 255, 255)
+#define DEACTIVE_COLLIDER_COLOR ColorFromRGBA(128, 128, 128, 255)
+#define HIT_COLLIDER_COLOR      ColorFromRGBA(  0, 255,   0, 255)
+#define HURT_COLLIDER_COLOR     ColorFromRGBA(255,   0,   0, 255)
 
 CollisionManager* collisionManager;
 
@@ -495,7 +495,7 @@ void renderGrid(){
     for(size_t y = 0; y < GRID_HEIGHT; y++){
         for(size_t x = 0; x < GRID_WIDTH; x++){
             const CollisionGrid* grid = &collisionManager->grid;
-            renderDrawRect({(grid->originX * CELL_SIZE_X) + (x * CELL_SIZE_X), (grid->originY * CELL_SIZE_Y) + (y * CELL_SIZE_Y)},{CELL_SIZE_X, CELL_SIZE_Y}, {1,0,0,1}, 10);
+            renderDrawRect({(grid->originX * CELL_SIZE_X) + (x * CELL_SIZE_X), (grid->originY * CELL_SIZE_Y) + (y * CELL_SIZE_Y)},{CELL_SIZE_X, CELL_SIZE_Y}, COLOR_RED, 10);
         }
     }
 }
