@@ -433,7 +433,7 @@ GAME_API void gameStart(Arena* gameArena){
     GameState* gs = arenaAllocStruct(gameArena, GameState);
     gs->arena = gameArena;
     gs->restart = false;
-    gs->gameSize = {640, 320};
+    gs->gameSize = {640, 360};
     gs->mainCamera = createCamera(-gs->gameSize.x / 2, gs->gameSize.x / 2, -gs->gameSize.y / 2, gs->gameSize.y/ 2);
 
     srand(1);
@@ -443,7 +443,7 @@ GAME_API void gameStart(Arena* gameArena){
     //TODO: remove
     //gs->uiState = initUi(gameArena);
     //---------------------------------------
-    gs->f = loadFont("Roboto-Regular", 24);
+    gs->f = loadFont("Roboto-Regular", 12);
     gs->finalTexture = loadRenderTexture(gs->gameSize.x, gs->gameSize.y);
     setTextureWrap(&gs->finalTexture.texture, TEXTURE_WRAP_CLAMP_TO_EDGE, TEXTURE_WRAP_CLAMP_TO_EDGE);
 
@@ -496,8 +496,6 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     float scale = 2.0f;
     glm::vec2 mouseWorld = getMouseWorld(gs, scale);
     glm::ivec2 mouseGrid = worldPosToGrid(&gs->worldGrid, mouseWorld);
-    String8 indexT = pushString8F(temp.arena, "%d, %d", mouseGrid.x, mouseGrid.y);
-    String8 mouseWorldT = pushString8F(temp.arena, "%f, %f", mouseWorld.x, mouseWorld.y);
 
     //render the game into the texture world
     glm::ivec2 gridSize = gs->worldGrid.size;
@@ -532,31 +530,73 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             static glm::ivec2 initialPos;
             //LOGINFO("%d", (mouseGrid == player->pos));
             //LOGINFO("%d", isMouseButtonJustPressed(MOUSE_BUTTON_LEFT));
+                glm::ivec2 neig[200];
+                bool visited[200];
+                int w[200];
+                for(int i = 0; i < 200; i++){
+                    visited[i] = false;
+                    w[i] = 0;
+                    neig[i] = glm::vec2(0,0);
+                }
+                int count = 0;
+                w[initialPos.y * 10 + initialPos.x] = 0;
+                visited[initialPos.y * 10 + initialPos.x] = false;
+                neig[0] = initialPos;
+            if(dragging){
+                int i = 0;
+                int j = 1;
+                while(i != j){
+                    glm::ivec2 root = neig[i];
+                    for(int y = root.y -1; y <= root.y + 1; y++){
+                        for(int x = root.x -1; x <= root.x + 1; x++){
+                            if( x >= 0 && x < gs->worldGrid.size.x &&
+                                y >= 0 && y < gs->worldGrid.size.y){
+                                
+                                Cell* c = getGridCell(&gs->worldGrid, x, y);
+                                //No diagonal neighborhoods
+                                if(glm::abs(root.x - x) + glm::abs(root.y - y) > 1){
+                                    continue;
+                                }
+
+                                //max depth
+                                if(glm::abs(initialPos.y - y) > player->movement || glm::abs(initialPos.x - x) > player->movement){
+                                    continue;
+                                }
+
+                                if(visited[y * 10 + x]){
+                                    continue;
+                                }
+                                if(!c->walkable) continue;
+
+                                glm::ivec2 cellPos = gridPosToWorld(&gs->worldGrid, x, y);
+                                visited[y * 10 + x] = true;
+                                w[y*10+x] = glm::abs(x - root.x) + glm::abs(y - root.y) + w[root.y * 10 + root.x];
+                                neig[j++] = glm::ivec2(x,y);
+                                String8 s = pushString8F(temp.arena, "%d", w[y*10+x]);
+                                renderDrawText2D(&gs->f, s.str, cellPos, 1);
+                                if(w[y*10+x] <= player->movement){
+                                    renderDrawFilledRect(cellPos, glm::vec2(gs->worldGrid.cellSize), 0, {0.8f, 0.4f, 0.0f, 1.0f});
+                                }
+                                count++;
+                            }
+                        }
+                    }
+                    i++;
+                }
+            }
             if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->pos)){
                 initialPos = player->pos;
                 dragging = true;
-            } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)
-                && mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement 
-                && mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
+            } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)){
 
-                Cell* c = getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y);
-                if(c->walkable){
-                    player->pos = mouseGrid;
-                    dragging = false;
-                    initialPos = player->pos;
-                }
-            }
-            if(dragging){
-                for(int j = initialPos.y - player->movement; j <= initialPos.y + player->movement; j++){
-                    for(int i = initialPos.x - player->movement; i <= initialPos.x + player->movement; i++){
-                        if(i >= 0 && i < gs->worldGrid.size.x &&
-                           j >= 0 && j < gs->worldGrid.size.y){
-                                glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i, j);
-                                Cell* c = getGridCell(&gs->worldGrid, i , j);
-                                if(c->walkable){
-                                    renderDrawRect(cellPos, glm::vec2(gs->worldGrid.cellSize), {0.8f, 0.4f, 0.0f, 1.0f});
-                                }
-                        }
+                //&& mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement 
+                //&& mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
+                if(w[mouseGrid.y * 10 + mouseGrid.x] <= player->movement){
+                    Cell* c = getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y);
+                    if(c->walkable){
+                        player->pos = mouseGrid;
+                        dragging = false;
+                        initialPos = player->pos;
                     }
                 }
             }
@@ -571,9 +611,7 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                 }else if(unit->type == UNIT_ENEMY){
                     unitColor = enemyColor;
                 }
-                static float accDt;
-                accDt += dt;
-                renderDrawFilledRect(unitPos, glm::vec2(cellSize), 360 * (glm::sin((dt)) + 1.0f) * 0.5f, unitColor, LAYER_BG);
+                renderDrawFilledRect(unitPos, glm::vec2(cellSize), 0, unitColor, LAYER_BG);
             }
 
             //debug center lines
@@ -592,6 +630,10 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     glm::vec2 quadSize = gs->gameSize * scale;
     //glm::vec2 quadPos  = (getScreenSize() * 0.5f) - (quadSize * 0.5f); // top-left of quad
     //glm::vec2 quadPos  = glm::vec2((getScreenSize().x * 0.5f) - (quadSize.x * 0.5f), -quadSize.y * 0.5f); // top-left of quad
+
+    String8 indexT = pushString8F(temp.arena, "%d, %d", mouseGrid.x, mouseGrid.y);
+    String8 mouseWorldT = pushString8F(temp.arena, "%f, %f", mouseWorld.x, mouseWorld.y);
+
     glm::vec2 quadPos  = glm::vec2(0, 0); // top-left of quad
     Rect rect;
     rect.pos = {0,0};
@@ -600,10 +642,10 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     glm::vec2 pos = (getScreenSize() * 0.5f) - (quadSize * 0.5f);// quadPos + glm::vec2(0, quadSize.y); // shift down by height to compensate for flip
     beginScene();
         clearColor(0, 0, 0, 1);
-        renderDrawText2D(&gs->f, indexT.str ,{10,20}, 1);
-        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,50}, 1);
         renderDrawQuadPro2D(pos, {size.x, size.y},
                             0, rect, {0.0f,0.0f}, &gs->finalTexture.texture);
+        renderDrawText2D(&gs->f, indexT.str ,{10,20}, 1);
+        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,50}, 1);
     endScene();
     releaseTempArena(temp);
 
