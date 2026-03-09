@@ -1,0 +1,91 @@
+// raddbg 0.9.25 project file
+
+recent_file: path: "Exis/src/core/entrypoint.hpp"
+recent_file: path: "../../godot/scene/2d/gpu_particles_2d.cpp"
+recent_file: path: "../../godot/scene/2d/cpu_particles_2d.cpp"
+recent_file: path: "../../godot/scene/2d/cpu_particles_2d.h"
+recent_file: path: "../../godot/platform/windows/console_wrapper_windows.cpp"
+recent_file: path: "game/projectx.cpp"
+recent_file: path: "Exis/src/platform/applicationwindows.cpp"
+recent_file: path: ".claude/settings.local.json"
+debug_info:
+{
+  path: "D:/Projects/sandbox/application.pdb"
+  timestamp: 66208476100595
+}
+debug_info:
+{
+  path: "D:/Projects/sandbox/core.pdb"
+  timestamp: 66208490176988
+}
+debug_info:
+{
+  path: "D:/Projects/sandbox/game_temp.pdb"
+  timestamp: 66208155068166
+}
+debug_info:
+{
+  path: "D:/Projects/sandbox/game.pdb"
+  timestamp: 66208548535783
+}
+target:
+{
+  executable: "../../godot/bin/godot.windows.editor.dev.x86_64.console.exe"
+  working_directory: "../../godot/bin"
+}
+debug_info:
+{
+  path: "D:/godot/bin/godot.windows.editor.dev.x86_64.console.pdb"
+  timestamp: 66208322888976
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/cpu_particles_2d.cpp:779:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:52:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:46:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:139:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:163:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/cpu_particles_2d.cpp:1:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:299:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:610:1"
+  hit_count: 0
+}
+breakpoint:
+{
+  source_location: "../../godot/scene/2d/gpu_particles_2d.cpp:611:1"
+  hit_count: 0
+}
+target:
+{
+  executable: "application.exe"
+  working_directory: ""
+  enabled: 1
+}

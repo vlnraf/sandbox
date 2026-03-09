@@ -22,7 +22,7 @@ bool checkBox(String8 label, bool *value){
     c->ctxSize.y -= size.y + c->padding;
 
 
-    glm::vec4 color = state->style.bg;
+    Color color = state->style.bg;
     if(aabb(state->mousePos, pos, size)){
         state->hover = id;
     }
@@ -38,7 +38,7 @@ bool checkBox(String8 label, bool *value){
         color = state->style.active;
         renderDrawFilledRect(pos + size * 0.5f * 0.5f, size * 0.5f, 0, color);
     }
-    renderDrawText2D(&state->f, label.str, textPos, 1);
+    renderDrawText2D(&state->f, label.str, textPos, 1, COLOR_WHITE);
     return state->active == id;
 }
 
@@ -68,7 +68,7 @@ bool slider(Arena* a, String8 label, float* value, float min, float max){
     sPos = {pos.x + ((*value / max) * (size.x)) - sSize.x * 0.5f, pos.y };
     c->ctxSize.y -= size.y + c->padding;
 
-    glm::vec4 color = state->style.bg;
+    Color color = state->style.bg;
     if(aabb(state->mousePos, pos, size)){
         state->hover = id;
         color = state->style.hot;
@@ -85,8 +85,8 @@ bool slider(Arena* a, String8 label, float* value, float min, float max){
     }
     glm::vec2 textPos = {pos.x + size.x * 0.5f - tWidth * 0.5f, pos.y};
 
-    renderDrawText2D(&state->f, label.str, {labelPos.x, labelPos.y}, 1);
-    renderDrawText2D(&state->f, text.str, {textPos.x, textPos.y}, 1);
+    renderDrawText2D(&state->f, label.str, {labelPos.x, labelPos.y}, 1, COLOR_WHITE);
+    renderDrawText2D(&state->f, text.str, {textPos.x, textPos.y}, 1, COLOR_WHITE);
     renderDrawFilledRect({pos.x, pos.y}, size, 0, color);
     renderDrawFilledRect({sPos.x, sPos.y}, sSize, 0, color);
 
@@ -119,7 +119,7 @@ bool sliderInt(Arena* a, String8 label, int* value, int min, int max){
     sPos = {pos.x + (((float)*value / max) * (size.x)) - sSize.x * 0.5f, pos.y };
     c->ctxSize.y -= size.y + c->padding;
 
-    glm::vec4 color = state->style.bg;
+    Color color = state->style.bg;
     if(aabb(state->mousePos, pos, size)){
         state->hover = id;
         color = state->style.hot;
@@ -136,8 +136,8 @@ bool sliderInt(Arena* a, String8 label, int* value, int min, int max){
     }
     glm::vec2 textPos = {pos.x + size.x * 0.5f - tWidth * 0.5f, pos.y};
 
-    renderDrawText2D(&state->f, label.str, {labelPos.x, labelPos.y}, 1);
-    renderDrawText2D(&state->f, text.str, {textPos.x, textPos.y}, 1);
+    renderDrawText2D(&state->f, label.str, {labelPos.x, labelPos.y}, 1, COLOR_WHITE);
+    renderDrawText2D(&state->f, text.str, {textPos.x, textPos.y}, 1, COLOR_WHITE);
     renderDrawFilledRect({pos.x, pos.y}, size, 0, color);
     renderDrawFilledRect({sPos.x, sPos.y}, sSize, 0, color);
 
@@ -151,7 +151,7 @@ bool buttonEx(String8 label, glm::vec2 pos, glm::vec2 size){
     }
     uint32_t id = hashId(label);
 
-    glm::vec4 color = state->style.bg;
+    Color color = state->style.bg;
     glm::vec2 screenPos = {pos.x, getScreenSize().y - pos.y - size.y};
     if(aabb(state->mousePos, screenPos, size)){
         color = state->style.hot;

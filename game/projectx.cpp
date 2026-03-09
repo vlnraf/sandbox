@@ -36,7 +36,7 @@ struct UiRenderCommand{
     float scale;
     glm::vec2 pos;
     glm::vec2 size;
-    glm::vec4 color;
+    Color color;
 };
 
 struct UiRenderCommandArray{
@@ -56,10 +56,10 @@ struct UiLayout{
 };
 
 struct UiStyle{
-    glm::vec4 bg, panelBg;
-    glm::vec4 barColor;
-    glm::vec4 idle, hot, active;
-    glm::vec4 text;
+    Color bg, panelBg;
+    Color barColor;
+    Color idle, hot, active;
+    Color text;
 };
 
 
@@ -117,13 +117,13 @@ UiState* initUi(Arena* arena){
     state->renderCommands.lenght = 0;
 
     //default style
-    state->style.active      =  glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-    state->style.bg          = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-    state->style.hot         = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-    state->style.idle        = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    state->style.panelBg     = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
-    state->style.text        = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    state->style.barColor    = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+    state->style.active      = ColorFromRGBA(255,   0,   0, 255);
+    state->style.bg          = ColorFromRGBA(128, 128, 128, 255);
+    state->style.hot         = ColorFromRGBA(255, 255,   0, 255);
+    state->style.idle        = ColorFromRGBA(  0,   0,   0, 255);
+    state->style.panelBg     = ColorFromRGBA( 76,  76,  76, 255);
+    state->style.text        = ColorFromRGBA(255, 255, 255, 255);
+    state->style.barColor    = ColorFromRGBA(  0,   0, 255, 255);
     return state;
 }
 
@@ -196,7 +196,7 @@ bool button(String8 label){
         size = {tWidth, tHeight};
     }
 
-    glm::vec4 color = state->style.bg;
+    Color color = state->style.bg;
     glm::vec2 pos = {c->cursorPos.x, c->cursorPos.y - size.y};
 
     if(aabb(state->mousePos, pos, size)){
@@ -494,6 +494,7 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
 
     TempArena temp = getTempArena(gs->arena);
     float scale = 2.0f;
+    glm::vec2 mouseScreen = getMousePos();
     glm::vec2 mouseWorld = getMouseWorld(gs, scale);
     glm::ivec2 mouseGrid = worldPosToGrid(&gs->worldGrid, mouseWorld);
 
@@ -504,22 +505,22 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     clearColor(0.0f,0.0f,0.0f,1);
     beginTextureMode(&gs->finalTexture);
         beginMode2D(gs->mainCamera);
-            renderDrawFilledRect(-(gs->gameSize / 2.0f), gs->gameSize, 0, {0,0,0.5,1}, LAYER_BG);
+            renderDrawFilledRect(-(gs->gameSize / 2.0f), gs->gameSize, 0, ColorFromRGBA(0,0,128,255), LAYER_BG);
             //draw grid
             for(int j = 0; j < gridSize.y; j++){
                 for(int i = 0; i < gridSize.x; i++){
                     Cell* c = getGridCell(&gs->worldGrid, i, j);
                     glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, i , j);
-                    glm::vec4 bgColor       = {0.2, 0.5, 0.2, 1.0f};
-                    glm::vec4 borderColor   = {0.0, 0.0, 0.0, 1.0f};
+                    Color bgColor     = ColorFromRGBA(51, 128, 51, 255);
+                    Color borderColor = ColorFromRGBA( 0,   0,  0, 255);
                     if(aabb(mouseWorld, cellPos, {16,16})){
-                        renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, {0,0,1,1}, LAYER_BG);
+                        renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, ColorFromRGBA(0,0,255,255), LAYER_BG);
                     }else{
 
                     //renderDrawFilledRect(cellPos, glm::vec2(cellSize), 0, bgColor, LAYER_BG);
-                    //renderDrawFilledRect(cellPos, glm::vec2(10), 0, {1,0,0,1}, LAYER_BG);
+                    //renderDrawFilledRect(cellPos, glm::vec2(10), 0, ColorFromRGBA(255,0,0,255), LAYER_BG);
                     renderDrawFilledRectPro(cellPos, glm::vec2(cellSize), 0, {0.0, 0.0}, bgColor, LAYER_BG);
-                    //renderDrawFilledRectPro(cellPos + 4.0f, glm::vec2(8), 0, {0.0, 0.0}, {1,0,0,1}, LAYER_BG);
+                    //renderDrawFilledRectPro(cellPos + 4.0f, glm::vec2(8), 0, {0.0, 0.0}, ColorFromRGBA(255,0,0,255), LAYER_BG);
                     renderDrawRect(cellPos, glm::vec2(cellSize), borderColor, LAYER_BG);
                     }
                 }
@@ -573,9 +574,9 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                                 w[y*10+x] = glm::abs(x - root.x) + glm::abs(y - root.y) + w[root.y * 10 + root.x];
                                 neig[j++] = glm::ivec2(x,y);
                                 String8 s = pushString8F(temp.arena, "%d", w[y*10+x]);
-                                renderDrawText2D(&gs->f, s.str, cellPos, 1);
+                                renderDrawText2D(&gs->f, s.str, cellPos, 1, ColorFromRGBA(0,0,0,255));
                                 if(w[y*10+x] <= player->movement){
-                                    renderDrawFilledRect(cellPos, glm::vec2(gs->worldGrid.cellSize), 0, {0.8f, 0.4f, 0.0f, 1.0f});
+                                    renderDrawFilledRect(cellPos, glm::vec2(gs->worldGrid.cellSize), 0, ColorFromRGBA(204,102,0,255));
                                 }
                                 count++;
                             }
@@ -587,23 +588,26 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->pos)){
                 initialPos = player->pos;
                 dragging = true;
-            } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT)){
+            } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) &&
+                    mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement &&
+                    mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
+                if( mouseGrid.x >= 0 && mouseGrid.x <= gs->worldGrid.size.x &&
+                    mouseGrid.y >= 0 && mouseGrid.y <= gs->worldGrid.size.y){
 
-                //&& mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement 
-                //&& mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
-                if(w[mouseGrid.y * 10 + mouseGrid.x] <= player->movement){
-                    Cell* c = getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y);
-                    if(c->walkable){
-                        player->pos = mouseGrid;
-                        dragging = false;
-                        initialPos = player->pos;
+                    if(w[mouseGrid.y * 10 + mouseGrid.x] <= player->movement){
+                        Cell* c = getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y);
+                        if(c->walkable){
+                            player->pos = mouseGrid;
+                            dragging = false;
+                            initialPos = player->pos;
+                        }
                     }
                 }
             }
             for(int i = 0; i < gs->maxUnits; i++){
-                glm::vec4 unitColor;
-                glm::vec4 playerColor = {1,1,1,1};
-                glm::vec4 enemyColor = {1,0,0,1};
+                Color unitColor;
+                Color playerColor = COLOR_WHITE;
+                Color enemyColor  = COLOR_RED;
                 Unit* unit = &gs->units[i];
                 glm::vec2 unitPos = gridPosToWorld(&gs->worldGrid, unit->pos.x, unit->pos.y);
                 if(unit->type == UNIT_PLAYER){
@@ -617,10 +621,10 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             //debug center lines
             glm::vec2 p0x = glm::vec2(-gs->gameSize.x, 0);// gs->gameSize.y * 0.5f);
             glm::vec2 p1x = glm::vec2(gs->gameSize.x, 0);
-            renderDrawLine(p0x, p1x, {1,1,1,1});
+            renderDrawLine(p0x, p1x, COLOR_WHITE);
             glm::vec2 p0y = glm::vec2(0, -gs->gameSize.y);// gs->gameSize.y * 0.5f);
             glm::vec2 p1y = glm::vec2(0, gs->gameSize.y);
-            renderDrawLine(p0y, p1y, {1,1,1,1});
+            renderDrawLine(p0y, p1y, COLOR_WHITE);
         endMode2D();
     endTextureMode();
     endScene();
@@ -631,21 +635,23 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     //glm::vec2 quadPos  = (getScreenSize() * 0.5f) - (quadSize * 0.5f); // top-left of quad
     //glm::vec2 quadPos  = glm::vec2((getScreenSize().x * 0.5f) - (quadSize.x * 0.5f), -quadSize.y * 0.5f); // top-left of quad
 
-    String8 indexT = pushString8F(temp.arena, "%d, %d", mouseGrid.x, mouseGrid.y);
-    String8 mouseWorldT = pushString8F(temp.arena, "%f, %f", mouseWorld.x, mouseWorld.y);
+    String8 indexT = pushString8F(temp.arena, "grid: %d, %d", mouseGrid.x, mouseGrid.y);
+    String8 mouseWorldT = pushString8F(temp.arena, "world: %f, %f", mouseWorld.x, mouseWorld.y);
+    String8 mouseScreenT = pushString8F(temp.arena, "screen: %f, %f", mouseScreen.x, mouseScreen.y);
 
     glm::vec2 quadPos  = glm::vec2(0, 0); // top-left of quad
     Rect rect;
-    rect.pos = {0,0};
-    rect.size = gs->gameSize;
-    glm::vec2 size = glm::vec2(rect.size.x, rect.size.y) * scale;
+    rect.x = 0; rect.y = 0;
+    rect.w = gs->gameSize.x; rect.h = gs->gameSize.y;
+    glm::vec2 size = glm::vec2(rect.w, rect.h) * scale;
     glm::vec2 pos = (getScreenSize() * 0.5f) - (quadSize * 0.5f);// quadPos + glm::vec2(0, quadSize.y); // shift down by height to compensate for flip
     beginScene();
-        clearColor(0, 0, 0, 1);
+        clearColor(0.0f, 0.0f, 0.0f, 1.0f);
         renderDrawQuadPro2D(pos, {size.x, size.y},
-                            0, rect, {0.0f,0.0f}, &gs->finalTexture.texture);
-        renderDrawText2D(&gs->f, indexT.str ,{10,20}, 1);
-        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,50}, 1);
+                            0, rect, {0.0f,0.0f}, &gs->finalTexture.texture, COLOR_WHITE);
+        renderDrawText2D(&gs->f, indexT.str ,{10,10}, 1, COLOR_WHITE);
+        renderDrawText2D(&gs->f, mouseWorldT.str ,{10,30}, 1, COLOR_WHITE);
+        renderDrawText2D(&gs->f, mouseScreenT.str ,{10,50}, 1, COLOR_WHITE);
     endScene();
     releaseTempArena(temp);
 
