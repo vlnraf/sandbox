@@ -787,6 +787,10 @@ void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float 
 }
 
 void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const Color color, const float layer){
+    if(renderer->simpleVertexCount >= MAX_VERTICES){
+        renderFlush();
+        renderStartBatch();
+    }
     const size_t vertSize = 6;
 
 //    glm::vec4 vertexPosition[] = {
