@@ -27,6 +27,7 @@ enum GameTextures{
 
 struct Cell{
     bool walkable;
+    Color color; //TODO: change with textures or shaders?
 };
 
 enum UnitType{
@@ -38,6 +39,8 @@ struct Unit{
     UnitType type;
     glm::ivec2 pos;
     int movement;
+    bool hasMoved;
+    Color color; //TODO: change with textures or shaders?
 };
 
 struct WorldGrid{
@@ -62,6 +65,8 @@ struct GameState{
     WorldGrid worldGrid;
     Unit* units;
     int maxUnits;
+
+    int turn; //TODO: swap into a queue of turns?
 
     bool pause = false;
 };
