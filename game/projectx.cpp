@@ -518,7 +518,7 @@ GAME_API void gameStart(Arena* gameArena){
     for(int i = 1; i < gs->maxUnits; i++){
         gs->units[i].type = UNIT_ENEMY;
         glm::vec2 pos         = glm::vec2(rand() % gridSize.x, rand() % gridSize.y);
-        gs->units[i].pos      = pos;
+        gs->units[i].gridPos      = pos;
         gs->units[i].movement = 2;
         gs->units[i].color    = COLOR_RED;
         gs->units[i].hasMoved = false;
@@ -527,7 +527,7 @@ GAME_API void gameStart(Arena* gameArena){
         cell->walkable = false;
     }
     gs->units[0].type     = UNIT_PLAYER;
-    gs->units[0].pos      = {0,0};
+    gs->units[0].gridPos      = {0,0};
     gs->units[0].movement = 2;
     gs->units[0].color    = COLOR_WHITE;
     gs->units[0].hasMoved = false;
@@ -583,11 +583,17 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                 }
             }
             Unit* player = &gs->units[0];
-            glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->pos.x , player->pos.y);
+            glm::vec2 cellPos = gridPosToWorld(&gs->worldGrid, player->gridPos.x , player->gridPos.y);
             static glm::ivec2 initialPos;
             static bool dragging;
             int*w;
+            static glm::vec2 pos1;
+            static glm::vec2 pos2;
+            static glm::vec2 finalPos;
             if(dragging){
+                if(isMouseButtonJustPressed(MOUSE_BUTTON_RIGHT)){
+                    dragging = false;
+                }
                 w = bfsSearch(temp.arena, &gs->worldGrid, initialPos.x, initialPos.y, player->movement);
                 int span = gs->worldGrid.size.x;
                 for(int j = initialPos.y - player->movement; j <= initialPos.y + player->movement; j++){
@@ -601,24 +607,26 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                     }
                 }
             }
-            if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->pos)){
-                initialPos = player->pos;
+            if(!dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) && (mouseGrid == player->gridPos)){
+                initialPos = player->gridPos;
                 dragging = true;
             } else if(dragging && isMouseButtonJustPressed(MOUSE_BUTTON_LEFT) &&
                     mouseGrid.x <= initialPos.x + player->movement && mouseGrid.x >= initialPos.x - player->movement &&
                     mouseGrid.y <= initialPos.y + player->movement && mouseGrid.y >= initialPos.y - player->movement ){
                 if( mouseGrid.x >= 0 && mouseGrid.x <= gs->worldGrid.size.x &&
                     mouseGrid.y >= 0 && mouseGrid.y <= gs->worldGrid.size.y){
+                        
 
                     int span = gs->worldGrid.size.x;
                     if(w[mouseGrid.y * span + mouseGrid.x] <= player->movement){
                         Cell* c = getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y);
                         if(c->walkable){
-                            getGridCell(&gs->worldGrid, player->pos.x, player->pos.y)->walkable = true;
+                            getGridCell(&gs->worldGrid, player->gridPos.x, player->gridPos.y)->walkable = true;
                             getGridCell(&gs->worldGrid, mouseGrid.x, mouseGrid.y)->walkable = false;
-                            player->pos = mouseGrid;
+                            //player->gridPos = mouseGrid;
+                            player->destPos = mouseGrid;
                             dragging = false;
-                            initialPos = player->pos;
+                            initialPos = player->gridPos;
                             player->hasMoved = true;
                         }
                     }
@@ -629,9 +637,9 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                 for(int i = 0; i < gs->maxUnits; i++){
                     Unit* unit = &gs->units[i];
                     if(unit->type == UNIT_PLAYER) continue;
-                    glm::vec2 unitPos = gridPosToWorld(&gs->worldGrid, unit->pos.x, unit->pos.y);
-                    int* w = bfsSearch(temp.arena, &gs->worldGrid, unit->pos.x, unit->pos.y, unit->movement);
-                    glm::vec2 unitGridPos = glm::vec2(unit->pos.x, unit->pos.y);
+                    glm::vec2 unitPos = gridPosToWorld(&gs->worldGrid, unit->gridPos.x, unit->gridPos.y);
+                    int* w = bfsSearch(temp.arena, &gs->worldGrid, unit->gridPos.x, unit->gridPos.y, unit->movement);
+                    glm::vec2 unitGridPos = glm::vec2(unit->gridPos.x, unit->gridPos.y);
                     int span = gs->worldGrid.size.x;
                     int bestCost = 0;
                     glm::vec2 bestPos;
@@ -648,19 +656,35 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
                     }
                     if(reachableCount > 0){
                         glm::ivec2 newPos = reachable[rand() % reachableCount];
-                        getGridCell(&gs->worldGrid, unit->pos.x, unit->pos.y)->walkable = true;
+                        getGridCell(&gs->worldGrid, unit->gridPos.x, unit->gridPos.y)->walkable = true;
                         getGridCell(&gs->worldGrid, newPos.x, newPos.y)->walkable = false;
-                        unit->pos = newPos;
+                        unit->gridPos = newPos;
                         unit->hasMoved = true;
                     }
                 }
             }
             //_sleep(100);
 
-            for(int i = 0; i < gs->maxUnits; i++){
+            for(int i = 1; i < gs->maxUnits; i++){
                 Unit* unit = &gs->units[i];
-                glm::vec2 unitPos = gridPosToWorld(&gs->worldGrid, unit->pos.x, unit->pos.y);
+                glm::vec2 unitPos = gridPosToWorld(&gs->worldGrid, unit->gridPos.x, unit->gridPos.y);
                 renderDrawFilledRect(unitPos, glm::vec2(cellSize), 0, unit->color, LAYER_BG);
+            }
+
+            //player for now 
+            for(int i = 0; i < 1; i++){
+                Unit* unit = &gs->units[i];
+                //Lerp for visualization
+                pos1 = gridPosToWorld(&gs->worldGrid, unit->gridPos.x, unit->gridPos.y);
+                pos2 = gridPosToWorld(&gs->worldGrid, unit->destPos.x, unit->destPos.y);
+                float a = 0.00001f;
+                if(glm::distance(pos1, pos2) >= 0.1f){
+                    pos1 = glm::vec2((1-a) * pos1.x + a * pos2.x, (1-a) * pos1.y + a * pos2.y);
+                    renderDrawFilledRect(pos1, glm::vec2(cellSize), 0, unit->color, LAYER_BG);
+                }
+                unit->gridPos = unit->destPos;
+                glm::vec2 pos = gridPosToWorld(&gs->worldGrid, unit->gridPos.x, unit->gridPos.y);
+                renderDrawFilledRect(pos, glm::vec2(cellSize), 0, unit->color, LAYER_BG);
             }
 
             //debug center lines
@@ -697,6 +721,8 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
         renderDrawText2D(&gs->f, indexT.str ,{10,10}, 1, COLOR_WHITE);
         renderDrawText2D(&gs->f, mouseWorldT.str ,{10,30}, 1, COLOR_WHITE);
         renderDrawText2D(&gs->f, mouseScreenT.str ,{10,50}, 1, COLOR_WHITE);
+                            String8 finalPosT = pushString8F(temp.arena, "%f, %f", finalPos.x, finalPos.y);
+                            renderDrawText2D(&gs->f, finalPosT.str, {0,0}, 1, COLOR_WHITE);
     endScene();
     releaseTempArena(temp);
 

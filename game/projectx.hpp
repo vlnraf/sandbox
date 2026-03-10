@@ -37,7 +37,8 @@ enum UnitType{
 
 struct Unit{
     UnitType type;
-    glm::ivec2 pos;
+    glm::ivec2 gridPos;
+    glm::ivec2 destPos;
     int movement;
     bool hasMoved;
     Color color; //TODO: change with textures or shaders?
