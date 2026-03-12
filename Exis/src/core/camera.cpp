@@ -1,7 +1,7 @@
 #include "camera.hpp"
 #include "renderer/renderer.hpp"
 
-#include <glm/gtc/matrix_transform.hpp>
+#include "math.hpp"
 
 //OrtographicCamera* activeCamera;
 
@@ -12,8 +12,8 @@ OrtographicCamera createCamera(float left, float right, float bottom, float top)
     camera.height = top - bottom;
     //camera.aspectRatio = camera.width / camera.height;
 
-    camera.projection = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
-    camera.view = glm::translate(glm::mat4(1.0f), -camera.position);
+    camera.projection = mat4Ortho(left, right, bottom, top, -100.0f, 100.0f);
+    camera.view = mat4Translate(Mat4(1.0f), -camera.position);
 
     return camera;
 }
@@ -21,7 +21,7 @@ OrtographicCamera createCamera(float left, float right, float bottom, float top)
 void setProjection(OrtographicCamera* camera, float left, float right, float bottom, float top){
     camera->width = right - left;
     camera->height = top - bottom;
-    camera->projection = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
+    camera->projection = mat4Ortho(left, right, bottom, top, -100.0f, 100.0f);
 }
 
 void updateCameraAspectRatio(OrtographicCamera* camera, float viewportWidth, float viewportHeight){
@@ -34,19 +34,19 @@ void updateCameraAspectRatio(OrtographicCamera* camera, float viewportWidth, flo
 
     // Update projection to maintain aspect ratio
     camera->width = halfWidth * 2.0f;
-    camera->projection = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, -100.0f, 100.0f);
+    camera->projection = mat4Ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, -100.0f, 100.0f);
 }
 
 void setPosition(OrtographicCamera* camera, const glm::vec3& position){
     camera->position = position;
-    camera->view = glm::translate(glm::mat4(1.0f), -camera->position);
+    camera->view = mat4Translate(Mat4(1.0f), -camera->position);
 }
 
 void followTarget(OrtographicCamera* camera, const glm::vec3 targetPos){
     // For Hazel-style centered cameras: just set position to target
     // The centered projection automatically centers the view on this position
     camera->position = targetPos;
-    camera->view = glm::translate(glm::mat4(1.0f), -camera->position);
+    camera->view = mat4Translate(Mat4(1.0f), -camera->position);
 }
 
 glm::vec2 worldToScreen(const OrtographicCamera& camera, const glm::vec3& worldPos) {

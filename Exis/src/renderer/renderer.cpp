@@ -1,7 +1,6 @@
 #include "renderer.hpp"
 #include "fontmanager.hpp"
 #include "core/tracelog.hpp"
-#include <glm/gtx/string_cast.hpp>
 
 #ifndef __EMSCRIPTEN__
 #include <glad/glad.h>
@@ -627,19 +626,19 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
     }
     // Subtract ySortZ so higher Y positions (farther away) get lower Z values (render behind)
     pos.z = layerZ + ySortZ;
-    pos.z = glm::clamp(pos.z, zMin, zMax);
+    pos.z = clampF(pos.z, zMin, zMax);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, pos);
-    //glm::vec3 modelCenter(origin.x * size.x, origin.y * size.y, 0.0f);
-    //model = glm::translate(model, modelCenter);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)); //rotate x axis
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)); //rotate y axis
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
-    //model = glm::translate(model, -modelCenter);
+    Mat4 model = Mat4(1.0f);
+    model = mat4Translate(model, pos);
+    //Vec3 modelCenter(origin.x * size.x, origin.y * size.y, 0.0f);
+    //model = mat4Translate(model, modelCenter);
+    model = mat4Rotate(model, toRadians(rotation.x), Vec3(1.0f, 0.0f, 0.0f)); //rotate x axis
+    model = mat4Rotate(model, toRadians(rotation.y), Vec3(0.0f, 1.0f, 0.0f)); //rotate y axis
+    model = mat4Rotate(model, toRadians(rotation.z), Vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
+    //model = mat4Translate(model, -modelCenter);
 
     // Use size directly instead of scale
-    model = glm::scale(model, glm::vec3(size.x, size.y, 1.0f));
+    model = mat4Scale(model, Vec3(size.x, size.y, 1.0f));
 
     for(size_t i = 0; i < vertSize; i++){
         Vertex v = {};
@@ -821,16 +820,16 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
                                 {1.0f, 0.0f}   // Bottom-right
                             };
 
-    glm::mat4 model = glm::mat4(1.0f);
+    Mat4 model = Mat4(1.0f);
 
-    model = glm::translate(model, glm::vec3(position, layer));
+    model = mat4Translate(model, Vec3(position, layer));
 
-    //glm::vec3 modelCenter(0.5f * size.x, 0.5f * size.y, 0.0f);
-    //model = glm::translate(model, modelCenter);
-    model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
-    //model = glm::translate(model, -modelCenter);
+    //Vec3 modelCenter(0.5f * size.x, 0.5f * size.y, 0.0f);
+    //model = mat4Translate(model, modelCenter);
+    model = mat4Rotate(model, toRadians(rotation), Vec3(0.0f, 0.0f, 1.0f)); //rotate z axis
+    //model = mat4Translate(model, -modelCenter);
 
-    model = glm::scale(model, glm::vec3(size.x, size.y, 1.0f));
+    model = mat4Scale(model, Vec3(size.x, size.y, 1.0f));
 
     for(size_t i = 0; i < vertSize; i++){
         Vertex v = {};
@@ -884,13 +883,13 @@ void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm
                                 {1.0f, 0.0f}   // Bottom-right
                             };
 
-    glm::mat4 model = glm::mat4(1.0f);
+    Mat4 model = Mat4(1.0f);
 
-    model = glm::translate(model, glm::vec3(position, layer));
+    model = mat4Translate(model, Vec3(position, layer));
 
-    glm::vec3 modelCenter(radius, radius, 0.0f);
+    Vec3 modelCenter(radius, radius, 0.0f);
 
-    model = glm::scale(model, glm::vec3(radius * 2, radius * 2, 1.0f));
+    model = mat4Scale(model, Vec3(radius * 2, radius * 2, 1.0f));
 
     for(size_t i = 0; i < vertSize; i++){
         Vertex v = {};

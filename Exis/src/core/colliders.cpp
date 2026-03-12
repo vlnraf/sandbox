@@ -27,7 +27,7 @@ ECS_DECLARE_COMPONENT_EXTERN(Box2DCollider)
 CollisionManager* collisionManager;
 
 uint64_t hashEvent(Entity a, Entity b){
-    uint64_t key = ((uint64_t)glm::min(a,b) << 32) | glm::max(a,b);
+    uint64_t key = ((uint64_t)(a < b ? a : b) << 32) | (a < b ? b : a);
     return key % MAX_EVENTS;
 }
 

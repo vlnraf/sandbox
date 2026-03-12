@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "math.hpp"
 #include <stdarg.h>
 
 #include "arena.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include "core/coreapi.hpp"
+#include "math.hpp"
+#include "coreapi.hpp"
 
 struct OrtographicCamera{
     glm::vec3 position;

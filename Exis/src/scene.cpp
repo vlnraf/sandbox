@@ -312,7 +312,7 @@ void enemyFollowPlayerSystem(Ecs* ecs, Entity player, std::vector<ComponentType>
 
         dirX = followPlayer.x - t->position.x;// (t->position.x + (0.5 * t->scale.x));
         dirY = followPlayer.y - t->position.y;
-        glm::vec3 dir = glm::normalize(glm::vec3(dirX, dirY, 0.0f));
+        Vec3 dir = vec3Normalize(Vec3(dirX, dirY, 0.0f));
 
         vel->x = 10.0f * dir.x * dt;
         vel->y = 10.0f * dir.y * dt;

@@ -21,6 +21,4 @@
 #include "renderer/shader.hpp"
 #include "renderer/texture.hpp"
 
-#include <glm/glm.hpp>
-
 //#include "scene.hpp"

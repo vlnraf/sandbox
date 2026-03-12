@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include <glm/glm.hpp>
+#include "core/math.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H  

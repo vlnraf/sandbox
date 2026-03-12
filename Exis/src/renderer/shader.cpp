@@ -205,19 +205,19 @@ void setUniform(const Shader* shader, const char* name , const uint32_t value){
 void setUniform(const Shader* shader, const char* name , const glm::mat4 value){
     useShader(shader);
     int uniformId = glGetUniformLocation(shader->id, name);
-    glUniformMatrix4fv(uniformId, 1, GL_FALSE, glm::value_ptr(value));
+    glUniformMatrix4fv(uniformId, 1, GL_FALSE, mat4Ptr(value));
 }
 
 void setUniform(const Shader* shader, const char* name , const glm::vec3 value){
     useShader(shader);
     int uniformId = glGetUniformLocation(shader->id, name);
-    glUniform3fv(uniformId, 1, glm::value_ptr(value));
+    glUniform3fv(uniformId, 1, vec3Ptr(value));
 }
 
 void setUniform(const Shader* shader, const char* name , const glm::vec2 value){
     useShader(shader);
     int uniformId = glGetUniformLocation(shader->id, name);
-    glUniform2fv(uniformId, 1, glm::value_ptr(value));
+    glUniform2fv(uniformId, 1, vec2Ptr(value));
 }
 
 void bindTextureToShader(const Shader* shader, const char* name, const uint32_t texture, int unit){

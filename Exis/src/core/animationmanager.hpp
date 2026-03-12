@@ -1,7 +1,7 @@
 #pragma once
 
 //#include "core.hpp"
-#include <glm/glm.hpp>
+#include "math.hpp"
 #include <stdint.h>
 #include <unordered_map>
 #include <string>
