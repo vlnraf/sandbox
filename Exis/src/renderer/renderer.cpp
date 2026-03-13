@@ -262,9 +262,9 @@ void clearColor(float r, float g, float b, float a){
 //-------------------------HIGH LEVEL RENDERERER------------------------------------
 
 //TODO: instead of passing camera do a function beginScene to initilize the camera into the renderer??
-//void renderDrawQuad(Renderer* renderer, OrtographicCamera camera, glm::vec3 position, const glm::vec3 scale, const glm::vec3 rotation, const Texture* texture){
-//    glm::vec2 index = {0.0f, 0.0f};
-//    glm::vec2 spriteSize = {texture->width, texture->height};
+//void renderDrawQuad(Renderer* renderer, OrtographicCamera camera, Vec3 position, const Vec3 scale, const Vec3 rotation, const Texture* texture){
+//    Vec2 index = {0.0f, 0.0f};
+//    Vec2 spriteSize = {texture->width, texture->height};
 //    renderDrawQuad(renderer, camera, position, scale, rotation, texture, index, spriteSize);
 //}
 
@@ -313,12 +313,12 @@ void initRenderer(Arena* arena, const uint32_t width, const uint32_t height){
     LOGINFO("init renderer finished");
 }
 
-glm::vec4 calculateUV(const Texture* texture, glm::vec2 index, glm::vec2 size, glm::vec2 offset){
+Vec4 calculateUV(const Texture* texture, Vec2 index, Vec2 size, Vec2 offset){
     float tileWidth = (float)size.x / texture->width;
     float tileHeight = (float)size.y / texture->height;
-    glm::vec2 normalizedOffset = {offset.x / size.x, offset.y / size.y};
+    Vec2 normalizedOffset = {offset.x / size.x, offset.y / size.y};
 
-    glm::vec2 offIndex = index + normalizedOffset;
+    Vec2 offIndex = index + normalizedOffset;
 
     float epsilon = 0.01f;
     float uOffset = epsilon / (float) texture->width;
@@ -329,14 +329,14 @@ glm::vec4 calculateUV(const Texture* texture, glm::vec2 index, glm::vec2 size, g
     float tileBottom = tileHeight * offIndex.y + vOffset;
     float tileTop = tileHeight * (offIndex.y + 1) - vOffset;
 
-    return glm::vec4(tileTop, tileLeft, tileBottom, tileRight);
+    return Vec4(tileTop, tileLeft, tileBottom, tileRight);
 }
 
 //TODO refactor;
-glm::vec4 calculateSpriteUV(const Texture* texture, glm::vec2 index, glm::vec2 size, glm::vec2 tileSize){
+Vec4 calculateSpriteUV(const Texture* texture, Vec2 index, Vec2 size, Vec2 tileSize){
     float tileWidth = (float)tileSize.x / texture->width;
     float tileHeight = (float)tileSize.y / texture->height;
-    glm::vec2 nextIndex = {size.x / tileSize.x, size.y / tileSize.y};
+    Vec2 nextIndex = {size.x / tileSize.x, size.y / tileSize.y};
     float epsilon = 0.01f;
     float uOffset = epsilon / (float) texture->width;
     float vOffset = epsilon / (float) texture->height;
@@ -346,10 +346,10 @@ glm::vec4 calculateSpriteUV(const Texture* texture, glm::vec2 index, glm::vec2 s
     float tileBottom =  (tileHeight * index.y) + vOffset;
     float tileTop =     (tileHeight * (index.y + nextIndex.y)) - vOffset;
 
-    return glm::vec4(tileTop, tileLeft, tileBottom, tileRight);
+    return Vec4(tileTop, tileLeft, tileBottom, tileRight);
 }
 
-glm::vec4 calculateSpriteUV(const Texture* texture, Rect sourceRect){
+Vec4 calculateSpriteUV(const Texture* texture, Rect sourceRect){
     float epsilon = 0.01f;
     float uOffset = epsilon / (float) texture->width;
     float vOffset = epsilon / (float) texture->height;
@@ -359,7 +359,7 @@ glm::vec4 calculateSpriteUV(const Texture* texture, Rect sourceRect){
     float tileBottom =  sourceRect.y / texture->height;// + vOffset;
     float tileTop =     (sourceRect.y + sourceRect.h) / texture->height;// - vOffset;
 
-    return glm::vec4(tileTop, tileLeft, tileBottom, tileRight);
+    return Vec4(tileTop, tileLeft, tileBottom, tileRight);
 }
 
 void renderStartBatch();
@@ -553,7 +553,7 @@ void renderFlush(){
 }
 
 //TODO: used in tilemap renderer, but it's deprecated
-void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture,
+void renderDrawQuadPro(Vec3 position, const Vec2 size, const Vec3 rotation, const Rect sourceRect, const Vec2 origin, const Texture* texture,
                     Color color, bool ySort, float ySortOffset){
 
     OrtographicCamera cam = renderer->activeCamera;
@@ -582,28 +582,28 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
 
     // returned a vec4 so i use x,y,z,w to map
     // TODO: make more redable
-    glm::vec4 uv = calculateSpriteUV(texture, sourceRect);
+    Vec4 uv = calculateSpriteUV(texture, sourceRect);
 
     const size_t vertSize = 6;
     //Vertex vertices[vertSize];
-    //constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
-    glm::vec2 textureCoords[] = { { uv.y, uv.x }, { uv.w, uv.z }, {uv.y, uv.z}, {uv.y, uv.x}, { uv.w, uv.x }, { uv.w, uv.z } };
-    //glm::vec2 textureCoords[] = { { uv.y, uv.z }, { uv.w, uv.x }, {uv.y, uv.x}, {uv.y, uv.z}, { uv.w, uv.z }, { uv.w, uv.x } };
-    //glm::vec4 verterxColor[] = { {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
-    //glm::vec4 vertexPosition[] = {{0.0f, 1.0f, 0.0f, 1.0f},
+    //constexpr Vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+    Vec2 textureCoords[] = { { uv.y, uv.x }, { uv.w, uv.z }, {uv.y, uv.z}, {uv.y, uv.x}, { uv.w, uv.x }, { uv.w, uv.z } };
+    //Vec2 textureCoords[] = { { uv.y, uv.z }, { uv.w, uv.x }, {uv.y, uv.x}, {uv.y, uv.z}, { uv.w, uv.z }, { uv.w, uv.x } };
+    //Vec4 verterxColor[] = { {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
+    //Vec4 vertexPosition[] = {{0.0f, 1.0f, 0.0f, 1.0f},
     //                              {1.0f, 0.0f, 0.0f, 1.0f},
     //                              {0.0f, 0.0f, 0.0f, 1.0f},
     //                              {0.0f, 1.0f, 0.0f, 1.0f},
     //                              {1.0f, 1.0f, 0.0f, 1.0f},
     //                              {1.0f, 0.0f, 0.0f, 1.0f}};
-    //glm::vec4 vertexPosition[] = {{-0.5f,  0.5f,  0.0f, 1.0f},
+    //Vec4 vertexPosition[] = {{-0.5f,  0.5f,  0.0f, 1.0f},
     //                              {0.5f,  -0.5f,  0.0f, 1.0f},
     //                              {-0.5f, -0.5f,  0.0f, 1.0f},
     //                              {-0.5f,  0.5f,  0.0f, 1.0f},
     //                              {0.5f,   0.5f,  0.0f, 1.0f},
     //                              {0.5f,  -0.5f,  0.0f, 1.0f}};
 
-    glm::vec4 vertexPosition[] = {
+    Vec4 vertexPosition[] = {
                                     {-origin.x,        1.0f - origin.y, 0.0f, 1.0f},
                                     {1.0f - origin.x, -origin.y,        0.0f, 1.0f},
                                     {-origin.x,       -origin.y,        0.0f, 1.0f},
@@ -613,7 +613,7 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
                                 };
 
 
-    glm::vec3 pos = position;
+    Vec3 pos = position;
     float layerZ = pos.z;  // user-defined
     float ySortZ = 0.0f;
     float zMin = layerZ;
@@ -652,24 +652,24 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
 }
 
 // Simple variant: draw whole texture with color tint and single float rotation
-void renderDrawQuad(glm::vec3 position, const glm::vec2 size, float rotation, const Texture* texture, Color color, bool ySort){
+void renderDrawQuad(Vec3 position, const Vec2 size, float rotation, const Texture* texture, Color color, bool ySort){
     Rect sourceRect = {0, 0, (float)texture->width, (float)texture->height};
     renderDrawQuadPro(position, size, {0, 0, rotation}, sourceRect, {0,0}, texture, color, ySort);
 }
 
 // Extended variant: atlas region with color tint and optional ySort
-void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Texture* texture, const Rect sourceRect, Color color, bool ySort){
+void renderDrawQuadEx(Vec3 position, const Vec2 size, const Vec3 rotation, const Texture* texture, const Rect sourceRect, Color color, bool ySort){
     renderDrawQuadPro(position, size, rotation, sourceRect, {0,0}, texture, color, ySort);
 }
 
-void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const Color color, const float layer){
+void renderDrawLine(const Vec2 p0, const Vec2 p1, const Color color, const float layer){
     //float normLayer = layer + (1.0f - (1.0f / camera.height));
     if(renderer->lineVertexCount >= MAX_VERTICES_LINES){
         renderFlush();
         renderStartBatch();
     }
 
-    glm::vec4 vertexPosition[] = {{p0.x, p0.y, layer, 1.0f},
+    Vec4 vertexPosition[] = {{p0.x, p0.y, layer, 1.0f},
                                   {p1.x, p1.y, layer, 1.0f}};
 
     const size_t vertSize = 2;
@@ -685,11 +685,11 @@ void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const Color color, c
     }
 }
 
-void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const Color color, const float layer){
-    glm::vec2 p0 = {offset.x , offset.y};
-    glm::vec2 p1 = {offset.x + size.x, offset.y};
-    glm::vec2 p2 = {offset.x + size.x, offset.y + size.y};
-    glm::vec2 p3 = {offset.x, offset.y + size.y};
+void renderDrawRect(const Vec2 offset, const Vec2 size, const Color color, const float layer){
+    Vec2 p0 = {offset.x , offset.y};
+    Vec2 p1 = {offset.x + size.x, offset.y};
+    Vec2 p2 = {offset.x + size.x, offset.y + size.y};
+    Vec2 p3 = {offset.x, offset.y + size.y};
 
     renderDrawLine(p0, p1, color, layer);
     renderDrawLine(p1, p2, color, layer);
@@ -698,7 +698,7 @@ void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const Color co
 }
 
 //World text rendering (to be refactored)
-void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, Color color, float layer){
+void renderDrawText3D(Font* font, const char* text, Vec3 pos, float scale, Color color, float layer){
     if(renderer->quadVertexCount >= MAX_VERTICES){
         renderFlush();
         renderStartBatch();
@@ -744,11 +744,11 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
 
         // Create Rect for character atlas region (pixel coordinates)
         Rect charRect = {(float)ch.xOffset, 0.0f, (float)ch.Size.x, (float)ch.Size.y};
-        glm::vec4 uv = calculateSpriteUV(texture, charRect);
+        Vec4 uv = calculateSpriteUV(texture, charRect);
         // update VBO for each character
         size_t vertSize = 6;
         // bottom-left origin: ypos is bottom, ypos+h is top
-        glm::vec4 vertexPosition[] = {
+        Vec4 vertexPosition[] = {
             {xpos,     ypos + h, layer, 1.0f},
             {xpos,     ypos,     layer, 1.0f},
             {xpos + w, ypos,     layer, 1.0f},
@@ -757,7 +757,7 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
             {xpos + w, ypos + h, layer, 1.0f},
         };
 
-        glm::vec2 textureCoords[] = {
+        Vec2 textureCoords[] = {
             {uv.y, uv.z},
             {uv.y, uv.x},
             {uv.w, uv.x},
@@ -781,18 +781,18 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
 
 
 //------------------------------------------------------ UI methods ------------------------------------------------------
-void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float rotation, const Color color, const float layer){
+void renderDrawFilledRect(const Vec2 position, const Vec2 size, float rotation, const Color color, const float layer){
     renderDrawFilledRectPro(position, size, rotation, {0,0}, color, layer);
 }
 
-void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const Color color, const float layer){
+void renderDrawFilledRectPro(const Vec2 position, const Vec2 size, float rotation, const Vec2 origin, const Color color, const float layer){
     if(renderer->simpleVertexCount >= MAX_VERTICES){
         renderFlush();
         renderStartBatch();
     }
     const size_t vertSize = 6;
 
-//    glm::vec4 vertexPosition[] = {
+//    Vec4 vertexPosition[] = {
 //        {-0.5f,  0.5f, 0.0f, 1.0f}, //top left
 //        { 0.5f, -0.5f, 0.0f, 1.0f}, //bot right
 //        {-0.5f, -0.5f, 0.0f, 1.0f}, //bot left
@@ -801,7 +801,7 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
 //        { 0.5f, -0.5f, 0.0f, 1.0f}  //bot right
 //                                };
 
-    glm::vec4 vertexPosition[] = {
+    Vec4 vertexPosition[] = {
         {0.0f, 1.0f, 0.0f, 1.0f}, //top left
         {1.0f, 0.0f, 0.0f, 1.0f}, //bot right
         {0.0f, 0.0f, 0.0f, 1.0f}, //bot left
@@ -811,7 +811,7 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
                                 };
 
     // UV coordinates for each vertex (0,0 at top-left, 1,1 at bottom-right)
-    glm::vec2 uvCoords[] = {
+    Vec2 uvCoords[] = {
                                 {0.0f, 1.0f},  // Top-left
                                 {1.0f, 0.0f},  // Bottom-right
                                 {0.0f, 0.0f},  // Bottom-left
@@ -833,7 +833,7 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
 
     for(size_t i = 0; i < vertSize; i++){
         Vertex v = {};
-        v.pos = model * (vertexPosition[i] - glm::vec4(origin, 0, 0));
+        v.pos = model * (vertexPosition[i] - Vec4(origin, 0, 0));
         v.texCoord = uvCoords[i];  // Provide UV coordinates for custom shaders
         v.color = color;
         v.texIndex = 0;
@@ -841,30 +841,30 @@ void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, flo
     }
 }
 
-void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, Color color, float layer){
+void renderDrawText2D(Font* font, const char* text, Vec2 pos, float scale, Color color, float layer){
     renderDrawText3D(font, text, {pos, 0.0f}, scale, color, layer);
 }
 
 // Simple variant: draw whole texture with color tint
-void renderDrawQuad2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, Color color){
+void renderDrawQuad2D(Vec2 position, const Vec2 size, float rotation, const Texture* texture, Color color){
     Rect sourceRect = {0, 0, (float)texture->width, (float)texture->height};
     renderDrawQuadPro({position, 0}, size, {0, 0, rotation}, sourceRect, {0,0}, texture, color, false);
 }
 
 // Extended variant: atlas region with color tint
-void renderDrawQuadEx2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, const Rect sourceRect, Color color){
+void renderDrawQuadEx2D(Vec2 position, const Vec2 size, float rotation, const Texture* texture, const Rect sourceRect, Color color){
     renderDrawQuadPro({position, 0}, size, {0, 0, rotation}, sourceRect, {0,0}, texture, color, false);
 }
 
 // Pro variant: full control with origin
-void renderDrawQuadPro2D(glm::vec2 position, const glm::vec2 size, float rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, Color color){
+void renderDrawQuadPro2D(Vec2 position, const Vec2 size, float rotation, const Rect sourceRect, const Vec2 origin, const Texture* texture, Color color){
     renderDrawQuadPro({position, 0}, size, {0, 0, rotation}, sourceRect, origin, texture, color, false);
 }
 
-void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm::vec2 origin, const Color color, const float layer){
+void renderDrawCirclePro(const Vec2 position, const float radius, const Vec2 origin, const Color color, const float layer){
     const size_t vertSize = 6;
 
-    glm::vec4 vertexPosition[] = {
+    Vec4 vertexPosition[] = {
                                     {-origin.x,        1.0f - origin.y, 0.0f, 1.0f},
                                     {1.0f - origin.x, -origin.y,        0.0f, 1.0f},
                                     {-origin.x,       -origin.y,        0.0f, 1.0f},
@@ -874,7 +874,7 @@ void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm
                                 };
 
     // UV coordinates for each vertex (0,0 at top-left, 1,1 at bottom-right)
-    glm::vec2 uvCoords[] = {
+    Vec2 uvCoords[] = {
                                 {0.0f, 1.0f},  // Top-left
                                 {1.0f, 0.0f},  // Bottom-right
                                 {0.0f, 0.0f},  // Bottom-left
@@ -947,10 +947,10 @@ void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height){
     glViewport(x, y, width, height);
 }
 
-glm::vec2 getScreenSize(){
+Vec2 getScreenSize(){
     return {renderer->width, renderer->height};
 }
 
-glm::vec2 getRenderSize(){
+Vec2 getRenderSize(){
     return {renderer->width, renderer->height};
 }

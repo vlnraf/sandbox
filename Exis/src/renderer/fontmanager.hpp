@@ -8,8 +8,8 @@
 #define MAX_FONTS 1024
 
 struct Character {
-    glm::ivec2   Size;       // Size of glyph
-    glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+    IVec2   Size;       // Size of glyph
+    IVec2   Bearing;    // Offset from baseline to left/top of glyph
     unsigned int advance;    // Offset to advance to next glyph
     int xOffset;
 };

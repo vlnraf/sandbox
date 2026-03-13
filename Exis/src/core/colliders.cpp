@@ -509,7 +509,7 @@ void systemUpdateColliderPosition(){
         TransformComponent* t= (TransformComponent*)getComponent(entity, TransformComponent);
         Box2DCollider* box= (Box2DCollider*)getComponent(entity, Box2DCollider);
         // Compute collider center in world space
-        glm::vec2 worldCenter = glm::vec2(t->position.x + box->offset.x, t->position.y + box->offset.y);
+        Vec2 worldCenter = Vec2(t->position.x + box->offset.x, t->position.y + box->offset.y);
 
         // Compute bottom-left corner (optional, depends how your physics works)
         box->relativePosition = worldCenter - (box->size * 0.5f);
@@ -560,7 +560,7 @@ std::unordered_map<int, std::vector<Entity>> spatialGridHitBoxes;
 
 void initCollisionManager(){
 }
-Box2DCollider calculateCollider(TransformComponent* transform, glm::vec2 offset, glm::vec2 size){
+Box2DCollider calculateCollider(TransformComponent* transform, Vec2 offset, Vec2 size){
     Box2DCollider newBox;
     newBox.offset.x = transform->position.x + offset.x;
     newBox.offset.y = transform->position.y + offset.y;
@@ -577,15 +577,15 @@ Box2DCollider calculateWorldAABB(TransformComponent* transform, Box2DCollider* b
     return newBox;
 }
 
-glm::vec2 getBoxCenter(const Box2DCollider* box){
-    glm::vec2 result;
+Vec2 getBoxCenter(const Box2DCollider* box){
+    Vec2 result;
     result.x = box->relativePosition.x + (0.5f * box->size.x);
     result.y = box->relativePosition.y + (0.5f * box->size.y);
     return result;
 }
 
-glm::vec2 getBoxCenter(const glm::vec2* position, const glm::vec2* size){
-    glm::vec2 result;
+Vec2 getBoxCenter(const Vec2* position, const Vec2* size){
+    Vec2 result;
     result.x = position->x + (0.5f * size->x);
     result.y = position->y + (0.5f * size->y);
     return result;
@@ -593,7 +593,7 @@ glm::vec2 getBoxCenter(const glm::vec2* position, const glm::vec2* size){
 
 
 
-std::size_t spatialHash(const glm::vec2& position){
+std::size_t spatialHash(const Vec2& position){
     //NOTE: big prime numbers to reduce collision
     const size_t PRIME = 73856093;
     const size_t PRIME2 = 19349663;
@@ -602,7 +602,7 @@ std::size_t spatialHash(const glm::vec2& position){
     return (x * PRIME) ^ (y * PRIME2);
 }
 
-std::vector<Entity> getNearbyEntities(const glm::vec2& position){
+std::vector<Entity> getNearbyEntities(const Vec2& position){
     std::vector<Entity> result;
     std::unordered_set<Entity> seen;
     for(int i = -1; i <= 1; i++){
@@ -621,7 +621,7 @@ std::vector<Entity> getNearbyEntities(const glm::vec2& position){
     return result;
 }
 
-std::vector<Entity> getNearbyHitHurtboxes(const glm::vec2& position){
+std::vector<Entity> getNearbyHitHurtboxes(const Vec2& position){
     std::vector<Entity> result;
     std::unordered_set<Entity> seen;
     for(int i = -1; i <= 1; i++){

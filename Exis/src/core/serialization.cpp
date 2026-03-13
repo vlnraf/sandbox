@@ -81,14 +81,14 @@ void serializeItemsEnd(SerializationState* state){
     state->indentLevel--;
 }
 
-void serializeVec2(SerializationState* state, const char* name, const glm::vec2* v){
+void serializeVec2(SerializationState* state, const char* name, const Vec2* v){
     addIndentation(state);
     addList(state);
     int written = std::sprintf(state->buffer + state->bufPos, "%s: [%.3f, %.3f]\n", name, v->x, v->y);
     writeBufferIfPossible(state, written);
 }
 
-void serializeVec3(SerializationState* state, const char* name, const glm::vec3* v){
+void serializeVec3(SerializationState* state, const char* name, const Vec3* v){
     addIndentation(state);
     addList(state);
     int written = std::sprintf(state->buffer + state->bufPos, "%s: [%.3f, %.3f, %.3f]\n", name, v->x, v->y, v->z);

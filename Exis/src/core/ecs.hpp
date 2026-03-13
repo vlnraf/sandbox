@@ -112,19 +112,19 @@ CORE_API void clearEcs();
 
 extern ECS_DECLARE_COMPONENT_EXTERN(TransformComponent);
 struct TransformComponent{
-    glm::vec3 position = {0.0f, 0.0f, 0.0f};
-    glm::vec3 scale = {1.0f, 1.0f, 1.0f};
-    glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
+    Vec3 position = {0.0f, 0.0f, 0.0f};
+    Vec3 scale = {1.0f, 1.0f, 1.0f};
+    Vec3 rotation = {0.0f, 0.0f, 0.0f};
 };
 
 extern ECS_DECLARE_COMPONENT_EXTERN(DirectionComponent);
 struct DirectionComponent{
-    glm::vec2 dir;
+    Vec2 dir;
 };
 
 extern ECS_DECLARE_COMPONENT_EXTERN(VelocityComponent);
 struct VelocityComponent{
-    glm::vec2 vel;
+    Vec2 vel;
 };
 
 extern ECS_DECLARE_COMPONENT_EXTERN(SpriteComponent);
@@ -138,7 +138,7 @@ struct SpriteComponent{
     Rect sourceRect = {0, 0, 0, 0};
 
     // Physical size for rendering (scale)
-    glm::vec2 size = {0, 0};
+    Vec2 size = {0, 0};
 
     Color color = COLOR_WHITE;
 

@@ -9,7 +9,7 @@
 
 Tile createTile(const uint32_t y, const uint32_t x, const float tileWidth, const float tileHeight, const uint32_t textureWidth, const uint32_t textureHeight){
     Tile tile = {};
-    tile.index = glm::vec2(x, y);
+    tile.index = Vec2(x, y);
     tile.width = tileWidth;
     tile.height = tileHeight;
     tile.sourceRect = {x * tileWidth, y * tileHeight, tileWidth, tileHeight};
@@ -218,7 +218,7 @@ void animateTiles(TileMap* map, float dt){
         anim->elapsedTime += dt;
         if(anim->elapsedTime > anim->frameDuration){
             anim->currentFrame = (anim->currentFrame + 1) % anim->frames;
-            glm::vec2 frameIndex = anim->indices[anim->currentFrame];
+            Vec2 frameIndex = anim->indices[anim->currentFrame];
 
             tile->index = frameIndex;
             tile->sourceRect = gridToPixelRect(frameIndex, anim->tileSize);

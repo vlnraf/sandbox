@@ -64,7 +64,7 @@ struct Gamepad{
 struct Input{
     bool keys[350];
     bool keysPrevFrame[350];
-    glm::vec2 mousePos = {9999, 9999}; //NOTE: to not have 0,0 as initial position if the mouse has not entered the window
+    Vec2 mousePos = {9999, 9999}; //NOTE: to not have 0,0 as initial position if the mouse has not entered the window
     float isCapturingMousePos = false;
     bool mouseButtons[8];
     bool mouseButtonsPrevFrame[8];
@@ -78,16 +78,16 @@ struct Input{
 
 CORE_API void initInput(Arena* arena);
 //void registerGamepadInput(Input* input);
-CORE_API bool isPressed(int key);
-CORE_API bool wasPressed(int key);
-CORE_API bool isJustPressed(int key);
-CORE_API bool isJustPressedGamepad(int key);
-CORE_API bool isPressedGamepad(int key);
-CORE_API bool wasPressedGamepad(int key);
+CORE_API bool isKeyPressed(int key);
+CORE_API bool wasKeyPressed(int key);
+CORE_API bool isKeyJustPressed(int key);
+CORE_API bool isPadButtonJustPressed(int key);
+CORE_API bool isPadButtonPressed(int key);
+CORE_API bool wasPadButtonPressed(int key);
 CORE_API bool isMouseButtonPressed(int button);
 CORE_API bool isMouseButtonJustPressed(int button);
 CORE_API bool isMouseButtonRelease(int button);
-CORE_API glm::vec2 getMousePos();
+CORE_API Vec2 getMousePos();
 CORE_API void updateInputState(float dt);
 CORE_API Input* getInputState();
 

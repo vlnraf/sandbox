@@ -99,8 +99,8 @@ Font generateTextureFont(const char* filePath, int characterSize){ //Watch the f
 #endif
         }
         Character character = {
-            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+            IVec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+            IVec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
             (unsigned int)face->glyph->advance.x,
             xOffset // Store the xOffset for UV calculations
         };

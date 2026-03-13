@@ -18,12 +18,12 @@ struct Tile{
     uint16_t tileId;
     uint32_t width, height;
     uint32_t xPos, yPos;
-    //glm::vec2 tilePos;
-    //glm::vec2 tileSize;
+    //Vec2 tilePos;
+    //Vec2 tileSize;
     Rect sourceRect;
-    glm::vec2 uvTopLeft;
-    glm::vec2 uvBottomRight;
-    glm::vec2 index;
+    Vec2 uvTopLeft;
+    Vec2 uvBottomRight;
+    Vec2 index;
 
     bool ySort = false;
     float ySortOffset = 0.0f;  // Y offset for depth sorting (relative to tile position)

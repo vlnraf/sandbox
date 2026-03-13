@@ -19,8 +19,8 @@ struct SerializationState{
 
 CORE_API SerializationState initSerializer(const char* filePath);
 CORE_API void serializeWriteFile(SerializationState* state);
-CORE_API void serializeVec2(SerializationState* state, const char* name, const glm::vec2* v);
-CORE_API void serializeVec3(SerializationState* state, const char* name, const glm::vec3* v);
+CORE_API void serializeVec2(SerializationState* state, const char* name, const Vec2* v);
+CORE_API void serializeVec3(SerializationState* state, const char* name, const Vec3* v);
 CORE_API void serializeBool(SerializationState* state, const char* name, const bool v);
 CORE_API void serializeInt(SerializationState* state, const char* name, const int v);
 CORE_API void serializeFloat(SerializationState* state, const char* name, const float v);

@@ -7,7 +7,7 @@
 
 OrtographicCamera createCamera(float left, float right, float bottom, float top){
     OrtographicCamera camera = {};
-    camera.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    camera.position = Vec3(0.0f, 0.0f, 0.0f);
     camera.width = right - left;
     camera.height = top - bottom;
     //camera.aspectRatio = camera.width / camera.height;
@@ -37,60 +37,60 @@ void updateCameraAspectRatio(OrtographicCamera* camera, float viewportWidth, flo
     camera->projection = mat4Ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, -100.0f, 100.0f);
 }
 
-void setPosition(OrtographicCamera* camera, const glm::vec3& position){
+void setPosition(OrtographicCamera* camera, const Vec3& position){
     camera->position = position;
     camera->view = mat4Translate(Mat4(1.0f), -camera->position);
 }
 
-void followTarget(OrtographicCamera* camera, const glm::vec3 targetPos){
+void followTarget(OrtographicCamera* camera, const Vec3 targetPos){
     // For Hazel-style centered cameras: just set position to target
     // The centered projection automatically centers the view on this position
     camera->position = targetPos;
     camera->view = mat4Translate(Mat4(1.0f), -camera->position);
 }
 
-glm::vec2 worldToScreen(const OrtographicCamera& camera, const glm::vec3& worldPos) {
+Vec2 worldToScreen(const OrtographicCamera& camera, const Vec3& worldPos) {
     // Compute the combined VP matrix
-    glm::mat4 vp = camera.projection * camera.view;
+    Mat4 vp = camera.projection * camera.view;
 
     // Transform the world position to clip space
-    glm::vec4 clipSpacePos = vp * glm::vec4(worldPos, 1.0f);
+    Vec4 clipSpacePos = vp * Vec4(worldPos, 1.0f);
 
     // Perform perspective division to get NDC (normalized device coordinates)
-    glm::vec3 ndc = glm::vec3(clipSpacePos) / clipSpacePos.w;
+    Vec3 ndc = Vec3(clipSpacePos) / clipSpacePos.w;
 
-    glm::vec2 screenSize = getScreenSize();
+    Vec2 screenSize = getScreenSize();
 
     // Convert NDC to screen space
     float screenX = (ndc.x * 0.5f + 0.5f) * screenSize.x;
     float screenY = (ndc.y * 0.5f + 0.5f) * screenSize.y;
     screenY = screenSize.y - screenY;
 
-    return glm::vec2(screenX, screenY);
+    return Vec2(screenX, screenY);
 }
 
-glm::vec2 worldToScreen(const OrtographicCamera& camera, const glm::vec2& worldPos) {
-    return worldToScreen(camera, glm::vec3(worldPos, 0.0f));
+Vec2 worldToScreen(const OrtographicCamera& camera, const Vec2& worldPos) {
+    return worldToScreen(camera, Vec3(worldPos, 0.0f));
 }
 
-glm::vec2 convertScreenCoords(glm::vec2 pos, glm::vec2 size, glm::vec2 screenSize){
-    glm::vec2 screenPos = {pos.x, screenSize.y - (pos.y + size.y)};
+Vec2 convertScreenCoords(Vec2 pos, Vec2 size, Vec2 screenSize){
+    Vec2 screenPos = {pos.x, screenSize.y - (pos.y + size.y)};
     return screenPos;
 }
 
 
-glm::vec2 screenToWorld(const OrtographicCamera& camera, const glm::vec2& screenSize, const glm::vec2& screenPos){
+Vec2 screenToWorld(const OrtographicCamera& camera, const Vec2& screenSize, const Vec2& screenPos){
     // Convert from top-left origin to bottom-left origin
-    glm::vec2 flipped = {screenPos.x, screenPos.y};
+    Vec2 flipped = {screenPos.x, screenPos.y};
 
     // Normalize to [0, 1]
-    glm::vec2 normalized = flipped / screenSize;
+    Vec2 normalized = flipped / screenSize;
 
     // Scale to camera world size
-    glm::vec2 worldPos = (normalized - 0.5f) * glm::vec2(camera.width, camera.height);
+    Vec2 worldPos = (normalized - 0.5f) * Vec2(camera.width, camera.height);
 
     // Offset by camera position 
-    worldPos += glm::vec2(camera.position.x, camera.position.y);
+    worldPos += Vec2(camera.position.x, camera.position.y);
 
     return worldPos;
 }

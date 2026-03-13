@@ -48,10 +48,10 @@ std::vector<std::string> splitText(const char* text, const char separator){
     return result;
 }
 
-void beginUiFrame(glm::vec2 canvasPos, glm::vec2 canvasSize){
+void beginUiFrame(Vec2 canvasPos, Vec2 canvasSize){
     uiState->canvasSize = canvasSize;
     uiState->mousePos = getMousePos();
-    glm::vec2 scale = uiState->canvasSize / getScreenSize();
+    Vec2 scale = uiState->canvasSize / getScreenSize();
     uiState->mousePos = uiState->mousePos * scale;
 
     //beginUIRender(canvasPos, canvasSize);
@@ -67,7 +67,7 @@ void endUiFrame(){
     endScene();
 }
 
-bool pointRectIntersection(glm::vec2 mousePos, glm::vec2 pos, glm::vec2 size){
+bool pointRectIntersection(Vec2 mousePos, Vec2 pos, Vec2 size){
     return  mousePos.x >= pos.x && mousePos.x <= pos.x + size.x &&
             mousePos.y >= pos.y && mousePos.y <= pos.y + size.y;
 }
@@ -78,15 +78,15 @@ void UiSetHot(uint32_t buttonId){
     }
 }
 
-bool UiButton(String8 text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation){
+bool UiButton(String8 text, Vec2 pos, Vec2 size, Vec2 rotation){
     bool result = false;
-    glm::vec2 mousePos = uiState->mousePos;
-    //glm::vec2 scale = {640.0f / (float)screenWidth, 320.0f / (float)screenHeight};
+    Vec2 mousePos = uiState->mousePos;
+    //Vec2 scale = {640.0f / (float)screenWidth, 320.0f / (float)screenHeight};
     //mousePos = mousePos * scale;
     //LOGINFO("%f / %f", mousePos.x, mousePos.y);
     uint32_t buttonId = uiState->id++;
 
-    glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + size.y)};
+    Vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + size.y)};
 
     Color color = ColorFromRGBA(0, 0, 0, 128);
 
@@ -136,21 +136,21 @@ bool UiButton(String8 text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation){
     return result;
 }
 
-void UiText(String8 text, glm::vec2 pos, float scale){
+void UiText(String8 text, Vec2 pos, float scale){
     //float baselineY = uiState->canvasSize.y - (pos.y + uiState->font->ascender * scale);
-    //glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + uiState->font->maxHeight * 0.5 * scale)};// + (uiState->font->characters->Size.y * scale))};
-    //glm::vec2 screenPos = {pos.x, baselineY};
+    //Vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + uiState->font->maxHeight * 0.5 * scale)};// + (uiState->font->characters->Size.y * scale))};
+    //Vec2 screenPos = {pos.x, baselineY};
     renderDrawText2D(uiState->font, text.str, pos, scale, COLOR_WHITE);
 }
 
-//void UiImage(Texture* texture, glm::vec2 pos, glm::vec2 rotation){
-//    glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + texture->height)};
+//void UiImage(Texture* texture, Vec2 pos, Vec2 rotation){
+//    Vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + texture->height)};
 //    Rect sourceRect = {.pos = {0,0}, .size = {texture->width, texture->height}};
 //    renderDrawQuad2D(texture, screenPos, {1,1}, rotation);
 //}
 
-//void UiImage(Texture* texture, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation, glm::vec2 index, glm::vec2 offset){
-//    glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + texture->height)};
+//void UiImage(Texture* texture, Vec2 pos, Vec2 size, Vec2 rotation, Vec2 index, Vec2 offset){
+//    Vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + texture->height)};
 //    renderDrawQuad2D(texture, screenPos, size, rotation, index, offset);
 //}
 
@@ -167,22 +167,22 @@ int calculateTextHeight(Font* font, const char* text, float scale){
 
 
 //Deprecated
-void UiText(const char* text, glm::vec2 pos, float scale){
+void UiText(const char* text, Vec2 pos, float scale){
     //float baselineY = uiState->canvasSize.y - (pos.y + uiState->font->ascender * scale);
-    //glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + uiState->font->maxHeight * 0.5 * scale)};// + (uiState->font->characters->Size.y * scale))};
-    //glm::vec2 screenPos = {pos.x, baselineY};
+    //Vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + uiState->font->maxHeight * 0.5 * scale)};// + (uiState->font->characters->Size.y * scale))};
+    //Vec2 screenPos = {pos.x, baselineY};
     renderDrawText2D(uiState->font, text, pos, scale, COLOR_WHITE);
 }
 //Deprecated
-bool UiButton(const char* text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotation){
+bool UiButton(const char* text, Vec2 pos, Vec2 size, Vec2 rotation){
     bool result = false;
-    glm::vec2 mousePos = uiState->mousePos;
-    //glm::vec2 scale = {640.0f / (float)screenWidth, 320.0f / (float)screenHeight};
+    Vec2 mousePos = uiState->mousePos;
+    //Vec2 scale = {640.0f / (float)screenWidth, 320.0f / (float)screenHeight};
     //mousePos = mousePos * scale;
     //LOGINFO("%f / %f", mousePos.x, mousePos.y);
     uint32_t buttonId = uiState->id++;
 
-    //glm::vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + size.y)};
+    //Vec2 screenPos = {pos.x, uiState->canvasSize.y - (pos.y + size.y)};
 
     Color color = ColorFromRGBA(0, 0, 0, 128);
 
@@ -227,7 +227,7 @@ bool UiButton(const char* text, glm::vec2 pos, glm::vec2 size, glm::vec2 rotatio
     renderDrawFilledRect(pos, size, 0, color);
     //TODO: position text based on input (top, left), (center, center) ...
     uint32_t textHeight = calculateTextHeight(uiState->font, text, 1.0f);
-    glm::vec2 textPos = {pos.x, pos.y + size.y - textHeight}; //NOTE: Text always on top
+    Vec2 textPos = {pos.x, pos.y + size.y - textHeight}; //NOTE: Text always on top
     UiText(text, textPos, 1.0f);
     //for(size_t i = 0; i < lines.size(); i++){
     //    pos.y = pos.y + (i * uiState->font->characters->Size.y * 0.3f);

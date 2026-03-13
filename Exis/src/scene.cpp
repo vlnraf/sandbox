@@ -58,9 +58,9 @@ Scene createScene(Renderer* renderer){
     scene.fgMap = createTilemap(tileFg, 30, 20, 32, simple);
 
     trasformComponentId transform = {};
-    transform.position = glm ::vec3(10.0f, 10.0f, 0.0f);
-    transform.scale = glm ::vec3(1.0f, 1.0f , 0.0f);
-    transform.rotation = glm ::vec3(0.0f, 0.0f, 45.0f);
+    transform.position = Vec3(10.0f, 10.0f, 0.0f);
+    transform.scale = Vec3(1.0f, 1.0f , 0.0f);
+    transform.rotation = Vec3(0.0f, 0.0f, 45.0f);
 
     spriteComponentId sprite = {};
     sprite.texture = white;
@@ -75,12 +75,12 @@ Scene createScene(Renderer* renderer){
 
     AnimationComponent anim = {};
 
-    scene.camera = createCamera(glm::vec3(0.0f, 0.0f, 0.0f), 640, 320);
+    scene.camera = createCamera(Vec3(0.0f, 0.0f, 0.0f), 640, 320);
 
-    transform.position = glm ::vec3(200.0f, 200.0f, 0.0f);
-    //transform.scale = glm ::vec3(25.0f, 25.0f , 0.0f);
-    transform.scale = glm ::vec3(1.0f, 1.0f, 0.0f);
-    transform.rotation = glm ::vec3(0.0f, 0.0f, 0.0f);
+    transform.position = Vec3(200.0f, 200.0f, 0.0f);
+    //transform.scale = Vec3(25.0f, 25.0f , 0.0f);
+    transform.scale = Vec3(1.0f, 1.0f, 0.0f);
+    transform.rotation = Vec3(0.0f, 0.0f, 0.0f);
     uint32_t player = createEntity(scene.ecs, ECS_TRANSFORM, (void*)&transform, sizeof(trasformComponentId));
     //sprite.id = awesome->id;
     sprite.texture = idleWalk;
@@ -165,9 +165,9 @@ Scene createScene(Renderer* renderer){
     pushComponent(scene.ecs, player, ECS_ANIMATION, (void*)&anim, sizeof(AnimationComponent));
     scene.player = player;
 
-    transform.position = glm ::vec3(200.0f, 200.0f, 0.0f);
-    transform.scale = glm ::vec3(1.0f, 1.0f , 0.0f);
-    transform.rotation = glm ::vec3(0.0f, 0.0f, 0.0f);
+    transform.position = Vec3(200.0f, 200.0f, 0.0f);
+    transform.scale = Vec3(1.0f, 1.0f , 0.0f);
+    transform.rotation = Vec3(0.0f, 0.0f, 0.0f);
     uint32_t tree = createEntity(scene.ecs, ECS_TRANSFORM, (void*)&transform, sizeof(trasformComponentId));
     sprite.texture = treeSprite;
     sprite.sourceRect = {0, 0, (float)treeSprite->width, (float)treeSprite->height};
@@ -177,9 +177,9 @@ Scene createScene(Renderer* renderer){
     srand(time(NULL));
 
     for(int i = 0; i < 3000; i++){
-        transform.position = glm::vec3(rand() % 600 + 32, rand() % 300 + 32, 0.0f);
-        transform.scale = glm ::vec3(0.02f, 0.02f , 0.0f);
-        transform.rotation = glm ::vec3(0.0f, 0.0f, 0.0f);
+        transform.position = Vec3(rand() % 600 + 32, rand() % 300 + 32, 0.0f);
+        transform.scale = Vec3(0.02f, 0.02f , 0.0f);
+        transform.rotation = Vec3(0.0f, 0.0f, 0.0f);
         uint32_t enemy = createEntity(scene.ecs, ECS_TRANSFORM, (void*)&transform, sizeof(trasformComponentId));
         sprite.texture = awesome;
         EnemyComponent enemyComp = {};
@@ -300,7 +300,7 @@ void enemyFollowPlayerSystem(Ecs* ecs, Entity player, std::vector<ComponentType>
     PROFILER_START();
     std::vector<Entity> entities = view(ecs, types);
     trasformComponentId* playerT = (trasformComponentId*) getComponent(ecs, player, ECS_TRANSFORM);
-    glm::vec3 followPlayer = playerT->position;
+    Vec3 followPlayer = playerT->position;
 
     //check for the center bottom instead of left bottom point
     followPlayer.x = playerT->position.x;// + (0.5 * playerT->scale.x);
@@ -316,7 +316,7 @@ void enemyFollowPlayerSystem(Ecs* ecs, Entity player, std::vector<ComponentType>
 
         vel->x = 10.0f * dir.x * dt;
         vel->y = 10.0f * dir.y * dt;
-        t->position += glm::vec3(vel->x, vel->y, 0.0f);
+        t->position += Vec3(vel->x, vel->y, 0.0f);
     }
     PROFILER_END();
 

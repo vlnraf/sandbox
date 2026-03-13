@@ -19,29 +19,29 @@ void initInput(Arena* arena){
     memSet(input->mouseButtonsPrevFrame, false, sizeof(input->mouseButtonsPrevFrame));
 }
 
-bool isPressed(int key){
+bool isKeyPressed(int key){
     return input->keys[key];
 }
 
-bool wasPressed(int key){
+bool wasKeyPressed(int key){
     return input->keysPrevFrame[key];
 }
 
-bool isJustPressed(int key){
+bool isKeyJustPressed(int key){
     return input->keys[key] && !input->keysPrevFrame[key];
 }
 
-bool wasPressedGamepad(int key){
+bool wasPadButtonPressed(int key){
     return input->gamepad.buttonsPrevFrame[key];
 }
-bool isPressedGamepad(int key){
+bool isPadButtonPressed(int key){
     return input->gamepad.buttons[key];
 }
-bool isJustPressedGamepad(int key){
+bool isPadButtonJustPressed(int key){
     return input->gamepad.buttons[key] && !input->gamepad.buttonsPrevFrame[key];
 }
 
-glm::vec2 getMousePos(){
+Vec2 getMousePos(){
     return input->mousePos;
 }
 

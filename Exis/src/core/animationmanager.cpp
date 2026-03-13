@@ -6,7 +6,7 @@ void initAnimationManager(){
     animationManager = new AnimationManager();
 }
 
-void registryAnimation(const char* id, const uint16_t frames, const uint16_t row, const glm::vec2 tileSize, bool loop){
+void registryAnimation(const char* id, const uint16_t frames, const uint16_t row, const Vec2 tileSize, bool loop){
     Animation anim = {};
     anim.frames = frames;
     anim.tileSize = tileSize;
@@ -20,7 +20,7 @@ void registryAnimation(const char* id, const uint16_t frames, const uint16_t row
 }
 
 // Helper function to convert grid index to pixel Rect
-Rect gridToPixelRect(glm::vec2 gridIndex, glm::vec2 tileSize){
+Rect gridToPixelRect(Vec2 gridIndex, Vec2 tileSize){
     return Rect{gridIndex.x * tileSize.x, gridIndex.y * tileSize.y, tileSize.x, tileSize.y};
 }
 

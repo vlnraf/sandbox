@@ -23,8 +23,8 @@
 // Standard vertex structure used by ALL geometry types
 // All fields must be present to match shader attribute layout
 struct Vertex{
-    glm::vec4 pos;        // location = 0
-    glm::vec2 texCoord;   // location = 1 (set to 0,0 if unused)
+    Vec4 pos;        // location = 0
+    Vec2 texCoord;   // location = 1 (set to 0,0 if unused)
     Color color;          // location = 2
     uint8_t texIndex;     // location = 3 (set to 0 if unused)
 };
@@ -93,8 +93,8 @@ void initRenderer(Arena* arena, const uint32_t width, const uint32_t height);
 void destroyRenderer();
 CORE_API void setRenderResolution(uint32_t width, uint32_t height);
 void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);  // Internal: OpenGL-specific state management
-CORE_API glm::vec2 getScreenSize();
-CORE_API glm::vec2 getRenderSize();
+CORE_API Vec2 getScreenSize();
+CORE_API Vec2 getRenderSize();
 
 
 //void setYsort(Renderer* renderer, bool flag);
@@ -134,7 +134,7 @@ void commandDrawSimpleVertex(const Vertex* vertices, const size_t vertCount);
 
 void setShader(Renderer* renderer, const Shader shader);
 
-glm::vec4 calculateUV(const Texture* texture, glm::vec2 index, glm::vec2 size, glm::vec2 offset);
+Vec4 calculateUV(const Texture* texture, Vec2 index, Vec2 size, Vec2 offset);
 
 void attachFrameBuffer(uint32_t texture);
 void attachRenderBuffer(uint32_t rbo, uint32_t width, uint32_t height);
@@ -158,25 +158,25 @@ CORE_API void enableBlending();
 
 // 3D Quad Drawing
 // Note: position.z is the base layer, ySort dynamically adjusts it based on Y position for depth sorting
-CORE_API void renderDrawQuad(glm::vec3 position, const glm::vec2 size, float rotation, const Texture* texture, Color color, bool ySort = false); // Simple: whole texture with tint
-CORE_API void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Texture* texture, const Rect sourceRect, Color color, bool ySort = false); // Extended: atlas region + color tint
-CORE_API void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3 rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, Color color, bool ySort, float ySortOffset = 0.0f); // Pro: full control with origin and y-sort offset
-CORE_API void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, Color color, const float layer = 1.0f);
+CORE_API void renderDrawQuad(Vec3 position, const Vec2 size, float rotation, const Texture* texture, Color color, bool ySort = false); // Simple: whole texture with tint
+CORE_API void renderDrawQuadEx(Vec3 position, const Vec2 size, const Vec3 rotation, const Texture* texture, const Rect sourceRect, Color color, bool ySort = false); // Extended: atlas region + color tint
+CORE_API void renderDrawQuadPro(Vec3 position, const Vec2 size, const Vec3 rotation, const Rect sourceRect, const Vec2 origin, const Texture* texture, Color color, bool ySort, float ySortOffset = 0.0f); // Pro: full control with origin and y-sort offset
+CORE_API void renderDrawText3D(Font* font, const char* text, Vec3 pos, float scale, Color color, const float layer = 1.0f);
 
 // 2D/UI Drawing - Primitives
-CORE_API void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const Color color, const float layer = 0.0f);
-CORE_API void renderDrawRect(const glm::vec2 offset, const glm::vec2 size, const Color color, const float layer = 0.0f);
-CORE_API void renderDrawFilledRect(const glm::vec2 position, const glm::vec2 size, float rotation, const Color color, const float layer = 0.0f);
-CORE_API void renderDrawFilledRectPro(const glm::vec2 position, const glm::vec2 size, float rotation, const glm::vec2 origin, const Color color, const float layer = 0.0f);
-CORE_API void renderDrawQuad2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, Color color); // Simple: whole texture with tint
-CORE_API void renderDrawQuadEx2D(glm::vec2 position, const glm::vec2 size, float rotation, const Texture* texture, const Rect sourceRect, Color color); // Extended: atlas region + color tint
-CORE_API void renderDrawQuadPro2D(glm::vec2 position, const glm::vec2 size, float rotation, const Rect sourceRect, const glm::vec2 origin, const Texture* texture, Color color); // Pro: full control with origin
-CORE_API void renderDrawText2D(Font* font, const char* text, glm::vec2 pos, float scale, Color color, const float layer = 1.0f);
-CORE_API void renderDrawCirclePro(const glm::vec2 position, const float radius, const glm::vec2 origin, const Color color, const float layer);
+CORE_API void renderDrawLine(const Vec2 p0, const Vec2 p1, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawRect(const Vec2 offset, const Vec2 size, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawFilledRect(const Vec2 position, const Vec2 size, float rotation, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawFilledRectPro(const Vec2 position, const Vec2 size, float rotation, const Vec2 origin, const Color color, const float layer = 0.0f);
+CORE_API void renderDrawQuad2D(Vec2 position, const Vec2 size, float rotation, const Texture* texture, Color color); // Simple: whole texture with tint
+CORE_API void renderDrawQuadEx2D(Vec2 position, const Vec2 size, float rotation, const Texture* texture, const Rect sourceRect, Color color); // Extended: atlas region + color tint
+CORE_API void renderDrawQuadPro2D(Vec2 position, const Vec2 size, float rotation, const Rect sourceRect, const Vec2 origin, const Texture* texture, Color color); // Pro: full control with origin
+CORE_API void renderDrawText2D(Font* font, const char* text, Vec2 pos, float scale, Color color, const float layer = 1.0f);
+CORE_API void renderDrawCirclePro(const Vec2 position, const float radius, const Vec2 origin, const Color color, const float layer);
 
 // UI Anchor helpers (for bottom-left origin coordinate system)
-CORE_API glm::vec2 anchorTopLeft(float x, float y);
-CORE_API glm::vec2 anchorTopRight(float x, float y);
-CORE_API glm::vec2 anchorBottomLeft(float x, float y);
-CORE_API glm::vec2 anchorBottomRight(float x, float y);
-CORE_API glm::vec2 anchorCenter(float x, float y);
+CORE_API Vec2 anchorTopLeft(float x, float y);
+CORE_API Vec2 anchorTopRight(float x, float y);
+CORE_API Vec2 anchorBottomLeft(float x, float y);
+CORE_API Vec2 anchorBottomRight(float x, float y);
+CORE_API Vec2 anchorCenter(float x, float y);

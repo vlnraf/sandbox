@@ -32,9 +32,9 @@ CORE_API void setUniform(const Shader* shader, const char* name , const float va
 CORE_API void setUniform(const Shader* shader, const char* name , const bool value);
 CORE_API void setUniform(const Shader* shader, const char* name , const int value);
 CORE_API void setUniform(const Shader* shader, const char* name , const uint32_t value);
-CORE_API void setUniform(const Shader* shader, const char* name , const glm::mat4 value);
-CORE_API void setUniform(const Shader* shader, const char* name , const glm::vec3 value);
-CORE_API void setUniform(const Shader* shader, const char* name , const glm::vec2 value);
+CORE_API void setUniform(const Shader* shader, const char* name , const Mat4 value);
+CORE_API void setUniform(const Shader* shader, const char* name , const Vec3 value);
+CORE_API void setUniform(const Shader* shader, const char* name , const Vec2 value);
 CORE_API void setUniform(const Shader* shader, const char* name , const int* value, int size);
 
 CORE_API void bindTextureToShader(const Shader* shader, const char* name, const uint32_t texture, int unit = 0);

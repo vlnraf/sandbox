@@ -40,8 +40,8 @@ struct Texture{
     uint32_t id;
     int width, height, nrChannels;
 
-    //glm::vec2 index;
-    glm::vec2 size;
+    //Vec2 index;
+    Vec2 size;
 };
 
 struct RenderTexture{

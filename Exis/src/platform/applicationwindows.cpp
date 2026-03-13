@@ -50,7 +50,7 @@ void updateAndRender(){
 
     windowPollEvents();
 
-    if(isJustPressed(KEYS::F5)){
+    if(isKeyJustPressed(Key_F5)){
         app->debugMode = !app->debugMode;
     }
 
@@ -97,6 +97,7 @@ bool applicationShouldClose(){
     return windowShouldClose(&app->window) || app->quit;
 }
 
+static uint32_t oldGsSize;
 ApplicationState initApplication(const char* name, int width, int height){
     ApplicationState app = {0};
     app.window = windowCreate(name, width, height);
@@ -110,7 +111,7 @@ ApplicationState initApplication(const char* name, int width, int height){
 
     platformLoadGame(srcGameName);
 
-    platformGameStart(&app.engine->gameArena);
+    oldGsSize = platformGameStart(&app.engine->gameArena);
     app.dt = 0.016;
     app.lastFrame = glfwGetTime();
     app.quit = false;
@@ -122,7 +123,11 @@ void applicationRun(){
     if(app->reload){
         //NOTE: Comment if you need to not reset the state of the game
         //app->engine->gameState = platformGameStart(app->engine);
-        platformGameStart(&app->engine->gameArena);
+        uint32_t newGsSize = platformGameStart(&app->engine->gameArena);
+        if(newGsSize != oldGsSize){
+            clearArena(&app->engine->gameArena);
+            uint32_t oldSize = platformGameStart(&app->engine->gameArena);
+        }
         app->reload = false;
     }
     updateAndRender();
