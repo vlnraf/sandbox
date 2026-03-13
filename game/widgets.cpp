@@ -23,7 +23,7 @@ bool checkBox(String8 label, bool *value){
 
 
     Color color = state->style.bg;
-    if(aabb(state->mousePos, pos, size)){
+    if(pointInRect(state->mousePos, pos, size)){
         state->hover = id;
     }
     if(state->hover == id){
@@ -69,7 +69,7 @@ bool slider(Arena* a, String8 label, float* value, float min, float max){
     c->ctxSize.y -= size.y + c->padding;
 
     Color color = state->style.bg;
-    if(aabb(state->mousePos, pos, size)){
+    if(pointInRect(state->mousePos, pos, size)){
         state->hover = id;
         color = state->style.hot;
     }
@@ -79,7 +79,7 @@ bool slider(Arena* a, String8 label, float* value, float min, float max){
             state->active = id;
             sPos.x = state->mousePos.x - sSize.x * 0.5f;
             float norm = ((sPos.x - pos.x + sSize.x * 0.5f) / size.x) * max;
-            *value = glm::clamp(norm, min, max);
+            *value = clampF(norm, min, max);
             color = state->style.active;
         }
     }
@@ -120,7 +120,7 @@ bool sliderInt(Arena* a, String8 label, int* value, int min, int max){
     c->ctxSize.y -= size.y + c->padding;
 
     Color color = state->style.bg;
-    if(aabb(state->mousePos, pos, size)){
+    if(pointInRect(state->mousePos, pos, size)){
         state->hover = id;
         color = state->style.hot;
     }
@@ -129,8 +129,8 @@ bool sliderInt(Arena* a, String8 label, int* value, int min, int max){
         if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             state->active = id;
             sPos.x = state->mousePos.x - sSize.x * 0.5f;
-            int norm = glm::floor(((sPos.x - pos.x + sSize.x * 0.5f) / size.x) * max);
-            *value = (int)glm::clamp(norm, min, max);
+            int norm = (int)floorF(((sPos.x - pos.x + sSize.x * 0.5f) / size.x) * max);
+            *value = (int)clampI(norm, min, max);
             color = state->style.active;
         }
     }
@@ -153,7 +153,7 @@ bool buttonEx(String8 label, glm::vec2 pos, glm::vec2 size){
 
     Color color = state->style.bg;
     glm::vec2 screenPos = {pos.x, getScreenSize().y - pos.y - size.y};
-    if(aabb(state->mousePos, screenPos, size)){
+    if(pointInRect(state->mousePos, screenPos, size)){
         color = state->style.hot;
         state->hover = id;
     }
@@ -173,7 +173,7 @@ bool buttonEx(String8 label, glm::vec2 pos, glm::vec2 size){
 //    Font* f = getFont("Roboto-Regular");
 //    renderDrawFilledRect(pos, size, 0, {0.3,0.3,0.3,1});
 //    String8 text;
-//    if(aabb(mousePos, pos, size)){
+//    if(pointInRect(mousePos, pos, size)){
 //        if(isJustPressed(KEYS::A)){
 //            text = pushString8F(tmp.arena, "%c", 'a');
 //        }

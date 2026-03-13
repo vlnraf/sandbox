@@ -25,27 +25,52 @@ enum GameTextures{
     PLAYER_TEXTURE = 0,
 };
 
-struct Cell{
-    bool walkable;
-    Color color; //TODO: change with textures or shaders?
-};
-
 enum UnitType{
     UNIT_PLAYER,
     UNIT_ENEMY
 };
 
-struct Unit{
-    UnitType type;
-    glm::ivec2 gridPos;
-    glm::ivec2 destPos;
-    int movement;
-    bool hasMoved;
-    Color color; //TODO: change with textures or shaders?
+enum UnitStatus{
+    STATUS_ALIVE,
+    STATUS_DEATH
 };
 
+enum ActionType{
+    ACTION_NONE,
+    ACTION_MOVE,
+    ACTION_ATTACK
+};
+
+struct Unit{
+    UnitType    type;
+    UnitStatus  status;
+    IVec2       gridPos;
+    IVec2       destPos;
+    int         actionPoints;
+    int         movement;
+    int         hp;
+    int         dmg;
+    int         attackRange;
+
+    //player control
+    bool selected;
+    ActionType actionType;
+    
+    //rendering
+    //NOTE: shoulde we separate the logic and rendering data??
+    Vec2        worldPos;
+    float       a;
+    Color       color; //TODO: change with textures or shaders
+};
+
+struct Cell{
+    bool    walkable;
+    Color   color; //TODO: change with textures or shaders
+};
+
+
 struct WorldGrid{
-    glm::ivec2 size;
+    IVec2 size;
     Cell* cell;
     float cellSize;
 };
@@ -53,27 +78,33 @@ struct WorldGrid{
 
 struct GameState{
     Arena* arena;
-    OrtographicCamera mainCamera;
-    bool restart;
 
-    Font f;
     //UiState* uiState;
-    RenderTexture finalTexture;
-    Texture gameTextures[MAX_GAME_TEXTURES];
-    Texture t;
-    glm::vec2 gameSize;
+    Font        f;
+    Texture     gameTextures[MAX_GAME_TEXTURES];
+    Vec2        gameSize;
 
-    WorldGrid worldGrid;
-    Unit* units;
-    int maxUnits;
+    //world
+    WorldGrid   worldGrid;
 
-    int turn; //TODO: swap into a queue of turns?
+    //units
+    Unit*       units;
+    int         maxUnits;
 
-    bool pause = false;
+    //turn system
+    int         turn; //TODO: swap into a queue of turns?
+    int*        turnQueue;
+    int         turnCount;
+    int         turnUnits;
+
+    //rendering
+    OrtographicCamera   mainCamera;
+    RenderTexture       finalTexture;
+
 };
 
 extern "C" {
-    GAME_API void gameStart(Arena* gameArena);
+    GAME_API uint32_t gameStart(Arena* gameArena);
     GAME_API void gameRender(Arena* gameArena, float dt);
     GAME_API void gameUpdate(Arena* gameArena, float dt);
     //GAME_API GameState* gameReload(GameState* gameState, Renderer* renderer, const char* filePath);

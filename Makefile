@@ -40,9 +40,19 @@ INCLUDE_GAME :=-I game -I Exis/src -I Exis/external/
 GAME_SRC = \
 	game/*.cpp \
 
+GAME_HEADERS = game/*.hpp
+
 APP_SRC = \
 	Exis/src/application/application.cpp \
-	
+
+
+APP_HEADERS = Exis/src/application/*.hpp
+
+CORE_HEADERS = \
+	Exis/src/core/*.hpp \
+	Exis/src/platform/*.hpp \
+
+RENDERING_HEADERS = Exis/src/renderer/*.hpp
 
 CORE_SRC = \
 	Exis/src/core/arena.cpp \
@@ -95,23 +105,23 @@ copy_libs:
 endif
 endif
 
-core.$(SHARED_EXT): ${CORE_SRC} ${RENDERING_SRC} Exis/src/glad.o
+core.$(SHARED_EXT): ${CORE_SRC} ${RENDERING_SRC} ${CORE_HEADERS} ${RENDERING_HEADERS} Exis/src/glad.o
 	@echo "Cleaning old core.dll"
 	$(REMOVE) *.o
 	$(REMOVE) core.$(SHARED_EXT)
 	@echo "Building the core library"
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBS) -lfreetype -lglfw3 $(PLATFORM_LIBS) -DCORE_EXPORT -o $@ $^ -shared
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBS) -lfreetype -lglfw3 $(PLATFORM_LIBS) -DCORE_EXPORT -o $@ ${CORE_SRC} ${RENDERING_SRC} Exis/src/glad.o -shared
 
-game.$(SHARED_EXT): ${GAME_SRC} 
+game.$(SHARED_EXT): ${GAME_SRC} ${GAME_HEADERS}
 	$(REMOVE) game.pdb
 	@echo "Building the game"
-	$(CXX) $(CXXFLAGS) $(INCLUDE_GAME) $(LIBS) -lfreetype -DGAME_EXPORT -o $@ -lcore $^ -shared 
+	$(CXX) $(CXXFLAGS) $(INCLUDE_GAME) $(LIBS) -lfreetype -DGAME_EXPORT -o $@ -lcore $(GAME_SRC) -shared
 	@echo "Game builded successfull"
-	
+
 
 $(APP_NAME): ${APP_SRC} Exis/src/glad.o
 	@echo "Building the application"
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBS) -lfreetype $^ -o $@ $(PLATFORM_LIBS) -lcore
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBS) -lfreetype $(APP_SRC) Exis/src/glad.o -o $@ $(PLATFORM_LIBS) -lcore
 	$(MAKE) copy_libs
 	@echo "System built successfully"
 	@echo "System builded successfull"
