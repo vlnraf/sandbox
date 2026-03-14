@@ -517,6 +517,11 @@ bool moveUnit(GameState* gs, Unit* u, WorldGrid* world, float dt){
     return result;
 }
 
+
+GAME_API const char* applicationSetup(){
+    return "Test";
+}
+
 GAME_API uint32_t gameStart(Arena* gameArena){
     if(gameArena->index > 0){
         return sizeof(GameState);
@@ -598,7 +603,7 @@ GAME_API uint32_t gameStart(Arena* gameArena){
     gs->turn        = 1;
     gs->turnCount   = 0;
     gs->turnUnits   = 0;
-    gs->turnQueue   = arenaAllocArray(gs->arena, int, gs->maxUnits);
+    gs->turnQueue   = arenaAllocArray(gs->arena, Unit*, gs->maxUnits);
     return sizeof(GameState);
 }
 
@@ -616,13 +621,13 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
         gs->turnUnits = 0;
         for(int i = 0; i < gs->maxUnits; i++){
             if(gs->units[i].status == STATUS_DEATH) continue;
-            gs->turnQueue[i] = i;
+            gs->turnQueue[gs->turnUnits] = &gs->units[i];
             gs->units[i].actionPoints = 1;
             gs->turnUnits++;
         }
         gs->turn++;
     }
-    if(gs->units[gs->turnCount].status == STATUS_DEATH) gs->turnCount++; //Death units don't move
+    //if(gs->units[gs->turnCount].status == STATUS_DEATH) gs->turnCount++; //Death units don't move
 
     //for(int i = 0; i < gs->maxUnits; i++){
     //    if(gs->units[i].type == UNIT_PLAYER){
@@ -638,7 +643,7 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
     //printf("^");
     //printf("\n");
 
-    Unit* unit = &gs->units[gs->turnCount];
+    Unit* unit = gs->turnQueue[gs->turnCount];
 
     TempArena temp = getTempArena(gs->arena);
     float scale = 2.0f;
@@ -718,27 +723,31 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
         }
 
         Unit* target;
-        if(unit->status == STATUS_DEATH) unit->actionPoints = 0;
-        for(int i = 0; i < reachableCount; i++){
-            target = getUnitAtCell(gs, reachable[i].x, reachable[i].y);
-            if(target && target->type == UNIT_PLAYER){
-                unit->actionType = ACTION_ATTACK;
-                break;
+        if(unit->hp <= 0){
+            unit->actionPoints = 0;
+            unit->actionType = ACTION_NONE;
+        }else{
+            for(int i = 0; i < reachableCount; i++){
+                target = getUnitAtCell(gs, reachable[i].x, reachable[i].y);
+                if(target && target->type == UNIT_PLAYER){
+                    unit->actionType = ACTION_ATTACK;
+                    break;
+                }
             }
-        }
-        if(unit->actionType == ACTION_NONE){
-            unit->actionType = ACTION_MOVE;
-            unit->destPos = reachable[rand() % reachableCount];
-            unitMovement(gs, unit, &gs->worldGrid, unit->destPos, dt);
-        }
+            if(unit->actionType == ACTION_NONE){
+                unit->actionType = ACTION_MOVE;
+                unit->destPos = reachable[rand() % reachableCount];
+                unitMovement(gs, unit, &gs->worldGrid, unit->destPos, dt);
+            }
 
-        if(unit->actionType == ACTION_ATTACK){
-            target->hp -= unit->dmg;
-            unit->actionPoints--;
-            LOGINFO("%d", target->hp);
-        }else if(unit->actionType == ACTION_MOVE){
-            if(moveUnit(gs, unit, &gs->worldGrid, dt)){
+            if(unit->actionType == ACTION_ATTACK){
+                target->hp -= unit->dmg;
                 unit->actionPoints--;
+                LOGINFO("%d", target->hp);
+            }else if(unit->actionType == ACTION_MOVE){
+                if(moveUnit(gs, unit, &gs->worldGrid, dt)){
+                    unit->actionPoints--;
+                }
             }
         }
         if(unit->actionPoints == 0){

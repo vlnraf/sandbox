@@ -94,7 +94,7 @@ struct GameState{
 
     //turn system
     int         turn; //TODO: swap into a queue of turns?
-    int*        turnQueue;
+    Unit**        turnQueue;
     int         turnCount;
     int         turnUnits;
 
@@ -105,6 +105,7 @@ struct GameState{
 };
 
 extern "C" {
+    GAME_API const char* applicationSetup();
     GAME_API uint32_t gameStart(Arena* gameArena);
     GAME_API void gameRender(Arena* gameArena, float dt);
     GAME_API void gameUpdate(Arena* gameArena, float dt);
