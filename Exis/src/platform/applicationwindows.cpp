@@ -98,18 +98,19 @@ bool applicationShouldClose(){
 }
 
 static uint32_t oldGsSize;
-ApplicationState initApplication(const char* name, int width, int height){
+ApplicationState initApplication(int width, int height){
     ApplicationState app = {0};
+
+    platformLoadGame(srcGameName);
+    const char* name = platformApplicationSetup();
     app.window = windowCreate(name, width, height);
 
     LOGINFO("Application successfully initialized");
-    app.engine = initEngine(app.window.width, app.window.height);
+    app.engine = initEngine(width, height);
     if(!app.engine){
         LOGERROR("Engine not initilized");
         return app;
     }
-
-    platformLoadGame(srcGameName);
 
     oldGsSize = platformGameStart(&app.engine->gameArena);
     app.dt = 0.016;

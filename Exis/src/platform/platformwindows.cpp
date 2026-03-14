@@ -17,10 +17,11 @@ struct Win32DLL{
 
 static Win32DLL gameCode = {};
 
-GameStart*  platformGameStart  = NULL;
-GameRender* platformGameRender = NULL;
-GameUpdate* platformGameUpdate = NULL;
-GameStop*   platformGameStop   = NULL;
+ApplicationSetup*   platformApplicationSetup    = NULL;
+GameStart*          platformGameStart           = NULL;
+GameRender*         platformGameRender          = NULL;
+GameUpdate*         platformGameUpdate          = NULL;
+GameStop*           platformGameStop            = NULL;
 
 FILETIME getFileTime(const char* fileName){
     FILETIME result = {};
@@ -50,12 +51,13 @@ void platformLoadGame(const char* dllName){
     gameCode.lastWriteTimeOld = getFileTime(dllName);
 
     if(gameCode.gameCodeDLL){
+        platformApplicationSetup = (ApplicationSetup*)GetProcAddress(gameCode.gameCodeDLL, "applicationSetup");
         platformGameStart = (GameStart*)GetProcAddress(gameCode.gameCodeDLL, "gameStart");
         platformGameRender = (GameRender*)GetProcAddress(gameCode.gameCodeDLL, "gameRender");
         platformGameUpdate = (GameUpdate*)GetProcAddress(gameCode.gameCodeDLL, "gameUpdate");
         //gameCode.gameReload = (GameReload*)GetProcAddress(gameCode.gameCodeDLL, "gameReload");
         platformGameStop = (GameStop*)GetProcAddress(gameCode.gameCodeDLL, "gameStop");
-        gameCode.isValid = (platformGameRender != nullptr) && (platformGameUpdate != nullptr);
+        gameCode.isValid = platformApplicationSetup && platformGameStart && platformGameRender && platformGameUpdate && platformGameStop;
         LOGINFO("new DLL attached");
     }
     if(!gameCode.isValid){

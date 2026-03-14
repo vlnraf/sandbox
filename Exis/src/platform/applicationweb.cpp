@@ -194,7 +194,7 @@ bool applicationShouldClose(){
     return windowShouldClose(&app->window) || app->quit;
 }
 
-ApplicationState initApplication(const char* name, int width, int height){
+ApplicationState initApplication(int width, int height){
     ApplicationState app = {0};
     app.window = windowCreate(name, width, height);
     app.engine = initEngine(app.window.width, app.window.height);

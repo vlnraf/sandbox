@@ -8,6 +8,7 @@ struct ApplicationState;
 struct EngineState;
 struct Arena;
 
+typedef const char* ApplicationSetup();
 typedef uint32_t GameStart(Arena* gameArena);
 typedef void GameRender(Arena* gameArena, float dt);
 typedef void GameUpdate(Arena* gameArena, float dt);
@@ -20,6 +21,7 @@ typedef void GameStop(Arena* gameArena);
 // ============================================================================
 
 // Game function pointers (internal - managed by platform layer)
+extern ApplicationSetup* platformApplicationSetup;
 extern GameStart*  platformGameStart;
 extern GameRender* platformGameRender;
 extern GameUpdate* platformGameUpdate;

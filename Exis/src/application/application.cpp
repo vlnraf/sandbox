@@ -10,5 +10,5 @@
 
 // Implement the createApplication() function required by the entrypoint
 ApplicationState createApplication(){
-    return initApplication("Prototype 1", WINDOW_WIDTH, WINDOW_HEIGHT);
+    return initApplication(WINDOW_WIDTH, WINDOW_HEIGHT);
 }

@@ -33,7 +33,7 @@ struct ApplicationState{
 // Application lifecycle functions (internal - called by application.exe main loop)
 CORE_API void updateAndRender();
 CORE_API bool applicationShouldClose();
-CORE_API ApplicationState initApplication(const char* name, int width, int height);
+CORE_API ApplicationState initApplication(int width, int height);
 CORE_API void applicationRun();
 CORE_API void applicationShutDown();
 
