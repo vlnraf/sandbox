@@ -58,6 +58,7 @@ struct Unit{
     
     //rendering
     //NOTE: shoulde we separate the logic and rendering data??
+    String8     dName;      //Debug name
     Vec2        worldPos;
     float       a;
     Color       color; //TODO: change with textures or shaders

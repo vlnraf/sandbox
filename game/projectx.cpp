@@ -569,6 +569,7 @@ GAME_API uint32_t gameStart(Arena* gameArena){
         gs->units[i].color           = COLOR_RED;
         gs->units[i].actionType      = ACTION_NONE;
         gs->units[i].attackRange     = 2;
+        gs->units[i].dName           = String8Lit("E");
 
         Cell* cell      = getGridCell(&gs->worldGrid, pos.x, pos.y);
         cell->walkable  = false;
@@ -587,6 +588,7 @@ GAME_API uint32_t gameStart(Arena* gameArena){
     gs->units[0].selected       = false;
     gs->units[0].actionType     = ACTION_NONE;
     gs->units[0].attackRange    = 5;
+    gs->units[0].dName          = String8Lit("P");
 
     Cell* cell      = getGridCell(&gs->worldGrid, pos.x, pos.y);
     cell->walkable  = false;
@@ -800,7 +802,42 @@ GAME_API void gameUpdate(Arena* gameArena, float dt){
             Vec2 p0y = Vec2(0, -gs->gameSize.y);// gs->gameSize.y * 0.5f);
             Vec2 p1y = Vec2(0, gs->gameSize.y);
             renderDrawLine(p0y, p1y, COLOR_WHITE);
+
+
         endMode2D();
+
+        //Queue simple render
+        Vec2 textureSize = (Vec2){(float)gs->finalTexture.texture.width, (float)gs->finalTexture.texture.height};
+        //float textScale = 1.0f;
+        //renderDrawText2D(&gs->f, "CIAOOOOO", {scaledSize.x,scaledSize.y}, 1.0f, COLOR_WHITE);
+        //Layout -------------------
+        int spacingX = 1;
+        int spacingY = 5;
+        int cardNum = gs->turnUnits;
+        Vec2 cardSize = (Vec2){30, 40};
+        Vec2 cardPos = (Vec2){(textureSize.x * 0.5f) - (((cardSize.x + spacingX) * cardNum) * 0.5f), textureSize.y - spacingY};
+        for(int i = 0; i < cardNum; i++){
+            renderDrawFilledRectPro(cardPos, cardSize, 0, {0,1}, COLOR_WHITE);
+            Unit* u = &gs->units[i];
+
+            float tScale = 1.0f; //text scale
+            float textHeight = calculateTextHeight(&gs->f, u->dName.str, tScale);
+            float textWidth  = calculateTextWidth(&gs->f, u->dName.str, tScale);
+            Vec2 textPos = (Vec2){cardPos.x + cardSize.x * 0.5f, cardPos.y - cardSize.y * 0.5f};
+            textPos.x = textPos.x - textWidth * 0.5f;
+            textPos.y = textPos.y - textHeight * 0.5f;
+            renderDrawText2D(&gs->f, u->dName.str, textPos, tScale, COLOR_BLACK);
+
+            //advance card cursor
+            cardPos.x = cardPos.x + cardSize.x + spacingX;
+        }
+        //for(int i = 0; i < gs->turnUnits; i++){
+        //    Unit* u = &gs->units[i];
+        //    float textWidth  = calculateTextWidth(&gs->f, u->dName.str, 1.0f);
+        //    Vec2 textPos = (Vec2){(textWidth + spacing) * i, textureSize.y - (textHeight + spacing)};
+        //    textPos.x += (textureSize.x * 0.5f); //set to center
+        //    renderDrawText2D(&gs->f, u->dName.str, textPos, 1.0f, COLOR_WHITE);
+        //}
     endTextureMode();
     endScene();
     
