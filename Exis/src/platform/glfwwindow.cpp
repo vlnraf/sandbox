@@ -105,7 +105,7 @@ Window windowCreate(const char* name, int width, int height){
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 	// Putting it in the centre
-	glfwSetWindowPos(window, mode->width/7, mode->height/7);
+	glfwSetWindowPos(window, mode->width * 0.5f - width * 0.5f, mode->height * 0.5f - height * 0.5f);
 
     glfwMakeContextCurrent(window);
     LOGINFO("GLAD successfully initialized");
