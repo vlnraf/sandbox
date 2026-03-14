@@ -373,6 +373,7 @@ void beginScene(RenderMode mode){
 
 void beginMode2D(OrtographicCamera camera){
     renderFlush();
+    renderer->previousCamera = renderer->activeCamera;
     renderer->activeCamera = camera;
     renderStartBatch();
 }
@@ -428,7 +429,7 @@ void endTextureMode(){
 
 void endMode2D(){
     renderFlush();
-    renderer->activeCamera = renderer->screenCamera;
+    renderer->activeCamera = renderer->previousCamera;
 
     renderStartBatch();
 }
@@ -748,27 +749,41 @@ void renderDrawText3D(Font* font, const char* text, Vec3 pos, float scale, Color
         // update VBO for each character
         size_t vertSize = 6;
         // bottom-left origin: ypos is bottom, ypos+h is top
+        //Vec4 vertexPosition[] = {
+        //    {xpos,     ypos + h, layer, 1.0f},
+        //    {xpos,     ypos,     layer, 1.0f},
+        //    {xpos + w, ypos,     layer, 1.0f},
+        //    {xpos,     ypos + h, layer, 1.0f},
+        //    {xpos + w, ypos,     layer, 1.0f},
+        //    {xpos + w, ypos + h, layer, 1.0f},
+        //};
+
         Vec4 vertexPosition[] = {
-            {xpos,     ypos + h, layer, 1.0f},
-            {xpos,     ypos,     layer, 1.0f},
-            {xpos + w, ypos,     layer, 1.0f},
-            {xpos,     ypos + h, layer, 1.0f},
-            {xpos + w, ypos,     layer, 1.0f},
-            {xpos + w, ypos + h, layer, 1.0f},
+            {0.0f, 1.0f, 0.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f, 1.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+            {0.0f, 1.0f, 0.0f, 1.0f},
+            {1.0f, 1.0f, 0.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f, 1.0f},
         };
 
+        //NOTE: Flipped because on Free Type lib can't just flip the rasterized font
         Vec2 textureCoords[] = {
-            {uv.y, uv.z},
-            {uv.y, uv.x},
-            {uv.w, uv.x},
-            {uv.y, uv.z},
-            {uv.w, uv.x},
-            {uv.w, uv.z}
+            {uv.y, uv.z},   // top-left:     left, bottom (flipped)
+            {uv.w, uv.x},   // bottom-right: right, top   (flipped)
+            {uv.y, uv.x},   // bottom-left:  left, top    (flipped)
+            {uv.y, uv.z},   // top-left:     left, bottom (flipped)
+            {uv.w, uv.z},   // top-right:    right, bottom(flipped)
+            {uv.w, uv.x},   // bottom-right: right, top   (flipped)
         };
+
+        Mat4 model = Mat4(1.0f);
+        model = mat4Translate(model, (Vec3){xpos, ypos, 0});
+        model = mat4Scale(model, Vec3(w, h, 1.0f));
 
         for(size_t i = 0; i < vertSize; i++){
             Vertex v = {};
-            v.pos = vertexPosition[i];
+            v.pos = model * vertexPosition[i];
             v.texCoord = textureCoords[i];
             v.color = color;
             v.texIndex = textureIndex;
